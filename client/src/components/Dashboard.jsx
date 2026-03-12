@@ -1,15 +1,22 @@
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { fmt, fmtDate } from "../utils/formatters.js";
-import { CAT_COLORS, CAT_ICONS, MONTHS } from "../constants.js";
+import { CAT_COLORS, CAT_ICONS, MONTHS, resolveIconGlyph } from "../constants.js";
 import styles from "./Dashboard.module.css";
 
 export default function Dashboard({ data, onEditTx, onDeleteTx }) {
-  const { transactions, debts } = data;
+  const { transactions, debts, subscriptions } = data;
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
   const balance = totalIncome - totalExpense;
   const pendingDebts = debts.reduce((sum, debt) => sum + Math.max(debt.total - debt.paid, 0), 0);
+  const fixedMonthly = subscriptions
+    .filter((item) => item.status === "active")
+    .reduce((sum, item) => {
+      if (item.frequency === "yearly") return sum + item.amount / 12;
+      if (item.frequency === "weekly") return sum + item.amount * 4.33;
+      return sum + item.amount;
+    }, 0);
 
   const chartData = useMemo(() => {
     const now = new Date();
@@ -50,16 +57,17 @@ export default function Dashboard({ data, onEditTx, onDeleteTx }) {
           <p className={styles.subtitle}>Your financial overview</p>
         </div>
         <button type="button" className={styles.exportBtn}>
-          <span className={styles.exportIcon}>↓</span>
+          <span className={styles.exportIcon}>v</span>
           Export
         </button>
       </div>
 
       <div className={styles.statsGrid}>
-        <StatCard label="TOTAL INCOME" value={fmt(totalIncome)} accent="green" icon="↗" />
-        <StatCard label="TOTAL EXPENSES" value={fmt(totalExpense)} accent="red" icon="↘" />
-        <StatCard label="BALANCE" value={fmt(balance)} accent="blue" icon="▣" />
-        <StatCard label="PENDING DEBTS" value={fmt(pendingDebts)} accent="gold" icon="¤" />
+        <StatCard label="TOTAL INCOME" value={fmt(totalIncome)} accent="green" icon="In" />
+        <StatCard label="TOTAL EXPENSES" value={fmt(totalExpense)} accent="red" icon="Out" />
+        <StatCard label="BALANCE" value={fmt(balance)} accent="blue" icon="Net" />
+        <StatCard label="FIXED / MONTH" value={fmt(fixedMonthly)} accent="gold" icon="Fix" />
+        <StatCard label="PENDING DEBTS" value={fmt(pendingDebts)} accent="gold" icon="Debt" />
       </div>
 
       <div className={styles.chartGrid}>
@@ -122,17 +130,17 @@ export default function Dashboard({ data, onEditTx, onDeleteTx }) {
           {transactions.slice(0, 6).map((tx) => (
             <div key={tx.id} className={styles.recentRow}>
               <div className={styles.recentLeft}>
-                <div className={styles.recentIcon}>{tx.icon || CAT_ICONS[tx.category] || "[]"}</div>
+                <div className={styles.recentIcon}>{resolveIconGlyph(tx.icon || CAT_ICONS[tx.category])}</div>
                 <div>
                   <div className={styles.recentTitle}>{tx.desc || tx.description}</div>
                   <div className={styles.recentMeta}>
-                    {tx.category} · {fmtDate(tx.date)}
+                    {tx.category} | {fmtDate(tx.date)}
                   </div>
                 </div>
               </div>
               <div className={styles.recentActions}>
                 <span className={tx.type === "income" ? styles.incomeAmount : styles.expenseAmount}>
-                  {tx.type === "income" ? "↗" : "↘"} {fmt(tx.amount)}
+                  {tx.type === "income" ? "+ " : "- "} {fmt(tx.amount)}
                 </span>
                 <button type="button" className={styles.actionBtn} onClick={() => onEditTx(tx)}>
                   Edit

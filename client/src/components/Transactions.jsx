@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { fmt, fmtDate } from "../utils/formatters.js";
-import { CAT_ICONS } from "../constants.js";
+import { CAT_ICONS, resolveIconGlyph } from "../constants.js";
 import styles from "./Transactions.module.css";
 
 const FILTERS = [
@@ -75,7 +75,7 @@ export default function Transactions({ transactions, onAdd, onEdit, onDelete }) 
             return (
               <div key={tx.id} className={styles.row}>
                 <div className={styles.txCell}>
-                  <span className={styles.txIcon}>{tx.icon || CAT_ICONS[tx.category] || "[]"}</span>
+                  <span className={styles.txIcon}>{resolveIconGlyph(tx.icon || CAT_ICONS[tx.category])}</span>
                   <span className={styles.txLabel}>{desc}</span>
                 </div>
                 <div>

@@ -3,6 +3,7 @@ import styles from "./Sidebar.module.css";
 const NAV = [
   { key: "dashboard", label: "Dashboard", icon: "grid" },
   { key: "transactions", label: "Transactions", icon: "transfer" },
+  { key: "fixed-costs", label: "Fixed Costs", icon: "repeat" },
   { key: "debts", label: "Debts", icon: "debt" },
 ];
 
@@ -62,6 +63,18 @@ function NavIcon({ type, active }) {
         <path d="M13 3l4 4-4 4" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M20 17H7" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
         <path d="M11 13l-4 4 4 4" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (type === "repeat") {
+    return (
+      <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3.5" y="6.5" width="17" height="11" rx="2.5" stroke={stroke} strokeWidth="2" />
+        <path d="M7 17.5V20.5" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+        <path d="M17 17.5V20.5" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+        <path d="M7 10.5H17" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+        <circle cx="8" cy="12.5" r="1" fill={stroke} />
       </svg>
     );
   }

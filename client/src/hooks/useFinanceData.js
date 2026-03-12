@@ -1,22 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
 import * as api from "../utils/api.js";
 
+const normalizeDebt = (debt) => ({ ...debt, dueDate: debt?.dueDate || debt?.due_date });
+const normalizeSubscription = (item) => ({ ...item, nextBilling: item?.nextBilling || item?.next_billing });
+
 export function useFinanceData() {
-  const [transactions,  setTransactions]  = useState([]);
-  const [debts,         setDebts]         = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [debts, setDebts] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [error,         setError]         = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const loadAll = useCallback(async () => {
     try {
       setLoading(true);
-      const [txs, dbs, subs] = await Promise.all([
-        api.getTx(), api.getDebts(), api.getSubs(),
-      ]);
+      const [txs, dbs, subs] = await Promise.all([api.getTx(), api.getDebts(), api.getSubs()]);
       setTransactions(txs);
-      setDebts(dbs);
-      setSubscriptions(subs);
+      setDebts(dbs.map(normalizeDebt));
+      setSubscriptions(subs.map(normalizeSubscription));
       setError(null);
     } catch (e) {
       setError("Cannot connect to server. Make sure the backend is running on port 3001.");
@@ -25,55 +26,72 @@ export function useFinanceData() {
     }
   }, []);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
-  // ── Transactions ──
   const addTransaction = async (tx) => {
     await api.addTx(tx);
-    setTransactions(p => [tx, ...p]);
+    await loadAll();
   };
+
   const updateTransaction = async (tx) => {
     await api.updateTx(tx.id, tx);
-    setTransactions(p => p.map(t => t.id === tx.id ? tx : t));
+    await loadAll();
   };
+
   const deleteTransaction = async (id) => {
     await api.deleteTx(id);
-    setTransactions(p => p.filter(t => t.id !== id));
+    await loadAll();
   };
 
-  // ── Debts ──
-  const addDebt = async (d) => {
-    await api.addDebt(d);
-    setDebts(p => [d, ...p]);
+  const addDebt = async (debt) => {
+    await api.addDebt(debt);
+    await loadAll();
   };
-  const updateDebt = async (d) => {
-    await api.updateDebt(d.id, d);
-    setDebts(p => p.map(x => x.id === d.id ? d : x));
+
+  const updateDebt = async (debt) => {
+    await api.updateDebt(debt.id, debt);
+    await loadAll();
   };
+
   const deleteDebt = async (id) => {
     await api.deleteDebt(id);
-    setDebts(p => p.filter(x => x.id !== id));
+    await loadAll();
   };
 
-  // ── Subscriptions ──
-  const addSubscription = async (s) => {
-    await api.addSub(s);
-    setSubscriptions(p => [s, ...p]);
+  const addSubscription = async (item) => {
+    await api.addSub(item);
+    await loadAll();
   };
-  const updateSubscription = async (s) => {
-    await api.updateSub(s.id, s);
-    setSubscriptions(p => p.map(x => x.id === s.id ? s : x));
+
+  const updateSubscription = async (item) => {
+    await api.updateSub(item.id, item);
+    await loadAll();
   };
+
   const deleteSubscription = async (id) => {
     await api.deleteSub(id);
-    setSubscriptions(p => p.filter(x => x.id !== id));
+    await loadAll();
   };
 
   return {
-    data: { transactions, debts, subscriptions, user: { name: "Willy Pessoa", email: "willypessoa12@gmail.com" } },
-    loading, error,
-    addTransaction, updateTransaction, deleteTransaction,
-    addDebt, updateDebt, deleteDebt,
-    addSubscription, updateSubscription, deleteSubscription,
+    data: {
+      transactions,
+      debts,
+      subscriptions,
+      user: { name: "Willy Pessoa", email: "willypessoa12@gmail.com" },
+    },
+    loading,
+    error,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    addDebt,
+    updateDebt,
+    deleteDebt,
+    addSubscription,
+    updateSubscription,
+    deleteSubscription,
   };
 }
