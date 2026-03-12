@@ -1,0 +1,15 @@
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(3px)}
+.modal{background:#fff;border-radius:16px;padding:28px;width:440px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.title{font-size:18px;font-weight:800;color:#0f172a}
+.close{background:#f1f5f9;border:none;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;color:#64748b}
+.typeToggle{display:flex;gap:8px;margin-bottom:16px}
+.typeBtn{flex:1;padding:9px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:12px;letter-spacing:1px;font-family:inherit;background:#f1f5f9;color:#94a3b8;transition:all 0.15s}
+.typeBtn.income{background:#22c55e;color:#fff} .typeBtn.expense{background:#ef4444;color:#fff}
+.field{margin-bottom:14px}
+.label{display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;letter-spacing:0.5px}
+.input{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#0f172a;background:#f8fafc;font-family:inherit;outline:none;box-sizing:border-box;transition:border 0.15s}
+.input:focus{border-color:#22c55e}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.saveBtn{width:100%;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:8px;font-family:inherit}
+.saveBtn:hover{opacity:0.9}

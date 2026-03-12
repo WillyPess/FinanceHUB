@@ -1,0 +1,232 @@
+.page {
+  padding: 38px 30px 34px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #101828;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #667085;
+  font-size: 15px;
+}
+
+.addBtn {
+  border: none;
+  background: #2fad68;
+  color: #fff;
+  border-radius: 16px;
+  padding: 14px 22px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.summaryCard {
+  border-radius: 20px;
+  padding: 20px 22px;
+  border: 1px solid;
+}
+
+.oweCard {
+  background: #fff1f0;
+  border-color: #f1c7c3;
+}
+
+.owedCard {
+  background: #edf8f2;
+  border-color: #c6e6d1;
+}
+
+.summaryLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #667085;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.oweValue,
+.owedValue {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.oweValue {
+  color: #e53935;
+}
+
+.owedValue {
+  color: #2fad68;
+}
+
+.filterGroup {
+  display: inline-flex;
+  gap: 8px;
+  background: #f2f4f7;
+  border-radius: 16px;
+  padding: 4px;
+  margin-bottom: 26px;
+}
+
+.filterBtn {
+  border: none;
+  background: transparent;
+  color: #667085;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.active {
+  background: #fff;
+  color: #101828;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #d7dfd7;
+  border-radius: 22px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.03);
+}
+
+.chips {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.chip,
+.chipMuted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.chipMuted {
+  background: #f2f4f7;
+  color: #344054;
+}
+
+.pending {
+  background: #fff1d6;
+  color: #d97706;
+}
+
+.partial {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.paid {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.amountRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.creditor {
+  font-size: 18px;
+  font-weight: 800;
+  color: #101828;
+}
+
+.note {
+  margin-top: 6px;
+  color: #667085;
+  font-size: 15px;
+}
+
+.negativeAmount,
+.positiveAmount {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.negativeAmount {
+  color: #e53935;
+}
+
+.positiveAmount {
+  color: #2fad68;
+}
+
+.metaRow {
+  margin-top: 18px;
+  color: #667085;
+  font-size: 15px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.iconBtn,
+.deleteBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: #101828;
+}
+
+.deleteBtn {
+  color: #ef4444;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  background: #fff;
+  border: 1px solid #d7dfd7;
+  border-radius: 22px;
+  padding: 28px;
+  text-align: center;
+  color: #667085;
+}
+
+@media (max-width: 1000px) {
+  .grid,
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}

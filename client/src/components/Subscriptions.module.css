@@ -1,0 +1,33 @@
+.page{padding:32px} .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px} .title{font-size:28px;font-weight:800;color:#0f172a} .subtitle{margin-top:4px;color:#94a3b8;font-size:14px}
+.addBtn{padding:11px 20px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.summaryGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.bodyGrid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.card{background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.cardTitle{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:16px}
+.groupLabel{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid #f1f5f9}
+.groupLabel:first-of-type{margin-top:0}
+.statusDot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.subRow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f8fafc}
+.subRow:last-child{border-bottom:none}
+.subIcon{font-size:22px;flex-shrink:0}
+.subInfo{flex:1;min-width:0}
+.subName{font-weight:600;font-size:13px;color:#0f172a}
+.subMeta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
+.badge{padding:2px 8px;background:#f1f5f9;border-radius:20px;font-size:11px;color:#475569;font-weight:500}
+.freqTag{padding:2px 8px;background:#eff6ff;border-radius:20px;font-size:11px;color:#3b82f6;font-weight:600}
+.nextDate{font-size:11px;color:#94a3b8}
+.subAmount{text-align:right;flex-shrink:0}
+.subAmtVal{font-weight:700;font-size:14px;color:#0f172a}
+.subAmtPer{font-size:11px;color:#94a3b8}
+.iconBtn{background:transparent;border:none;cursor:pointer;font-size:15px;padding:4px 6px;opacity:0.5;transition:opacity 0.15s}
+.iconBtn:hover{opacity:1}
+.upcomingRow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f8fafc}
+.upcomingRow:last-child{border-bottom:none}
+.upcomingInfo{flex:1}
+.upcomingName{font-weight:600;font-size:13px;color:#0f172a}
+.upcomingDate{font-size:11px;color:#94a3b8;margin-top:2px}
+.upcomingRight{text-align:right}
+.upcomingAmt{font-weight:700;font-size:13px;color:#0f172a}
+.daysTag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-top:2px}
+.empty{color:#94a3b8;font-size:13px;padding:8px 0}
+@media(max-width:1100px){.summaryGrid{grid-template-columns:repeat(2,1fr)}.bodyGrid{grid-template-columns:1fr}}

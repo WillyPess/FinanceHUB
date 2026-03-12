@@ -1,0 +1,16 @@
+.page{padding:32px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px}
+.title{font-size:28px;font-weight:800;color:#0f172a}
+.sub{margin-top:4px;color:#94a3b8;font-size:14px}
+.statsGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.chartsGrid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-bottom:20px}
+.card{background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.cardTitle{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:14px}
+.legend{display:flex;gap:18px;justify-content:center;margin-top:8px}
+.pieWrap{display:flex;align-items:center;gap:10px}
+.pieRow{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.pieDot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pieName{font-size:12px;color:#374151;flex:1}
+.piePct{font-size:12px;font-weight:700;color:#94a3b8}
+.empty{color:#94a3b8;font-size:13px;padding:8px 0}
+@media(max-width:1100px){.statsGrid{grid-template-columns:repeat(2,1fr)}.chartsGrid{grid-template-columns:1fr}}

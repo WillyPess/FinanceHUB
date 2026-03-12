@@ -1,0 +1,305 @@
+.page {
+  padding: 38px 30px 34px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #101828;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #667085;
+  font-size: 15px;
+}
+
+.exportBtn {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.exportIcon {
+  font-size: 18px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 30px;
+}
+
+.statCard {
+  border-radius: 22px;
+  padding: 22px 24px;
+  border: 1px solid #d8e0d7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 120px;
+}
+
+.green {
+  background: #ecf8f1;
+}
+
+.red {
+  background: #fff0ef;
+  border-color: #f1c7c3;
+}
+
+.blue {
+  background: #edf5ff;
+  border-color: #c6dbfb;
+}
+
+.gold {
+  background: #fff7eb;
+  border-color: #f0dbb1;
+}
+
+.statLabel {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #667085;
+  margin-bottom: 12px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: #101828;
+}
+
+.statIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2fad68;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.red .statIcon {
+  color: #ef4444;
+}
+
+.blue .statIcon {
+  color: #3b82f6;
+}
+
+.gold .statIcon {
+  color: #d89a13;
+}
+
+.chartGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-bottom: 28px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #d7dfd7;
+  border-radius: 22px;
+  padding: 28px 30px;
+  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.03);
+}
+
+.cardTitle {
+  font-size: 19px;
+  font-weight: 800;
+  color: #101828;
+  margin-bottom: 16px;
+}
+
+.chartWrap {
+  height: 320px;
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #667085;
+  font-size: 13px;
+}
+
+.legendDot,
+.categoryDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.categoryLayout {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px);
+  gap: 8px;
+  align-items: center;
+}
+
+.donutWrap {
+  height: 240px;
+}
+
+.categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.categoryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.categoryName {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #101828;
+}
+
+.categoryPct {
+  color: #667085;
+  font-weight: 600;
+}
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+}
+
+.recentRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 0;
+  border-bottom: 1px solid #eef1ee;
+}
+
+.recentRow:last-child {
+  border-bottom: none;
+}
+
+.recentLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.recentIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: #f4f7f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.recentTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #101828;
+}
+
+.recentMeta {
+  margin-top: 4px;
+  color: #667085;
+  font-size: 13px;
+}
+
+.recentActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.incomeAmount,
+.expenseAmount {
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.incomeAmount {
+  color: #2fad68;
+}
+
+.expenseAmount {
+  color: #ef4444;
+}
+
+.actionBtn {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chartGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 24px 18px;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .categoryLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .recentRow,
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

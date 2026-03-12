@@ -1,0 +1,138 @@
+.sidebar {
+  width: 320px;
+  min-height: 100%;
+  background: #f8faf8;
+  border-right: 1px solid #d7dfd7;
+  padding: 22px 18px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px 24px;
+}
+
+.brandMark {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #2fad68;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.brandName {
+  font-size: 19px;
+  font-weight: 800;
+  color: #101828;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 24px;
+  flex: 1;
+}
+
+.navBtn {
+  border: none;
+  background: transparent;
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #667085;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.navBtn:hover {
+  background: #eef3ee;
+}
+
+.active {
+  background: #deefe4;
+  color: #23a36b;
+}
+
+.navIcon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+}
+
+.userCard {
+  margin-top: auto;
+  border-top: 1px solid #d7dfd7;
+  padding: 22px 12px 4px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #d8f0de;
+  color: #2b8c59;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userInfo {
+  min-width: 0;
+  flex: 1;
+}
+
+.userName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #101828;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userEmail {
+  font-size: 13px;
+  color: #667085;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logoutBtn {
+  border: none;
+  background: transparent;
+  color: #344054;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .sidebar {
+    width: 100%;
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid #d7dfd7;
+  }
+
+  .userCard {
+    margin-top: 0;
+  }
+}
