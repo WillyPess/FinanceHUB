@@ -56,6 +56,15 @@ export const ICON_GLYPHS = {
   receipt: "🧾",
   music: "🎵",
   tickets: "🎟️",
+  btc: "₿",
+  eth: "Ξ",
+  bnb: "BNB",
+  sol: "SOL",
+  ada: "ADA",
+  xrp: "XRP",
+  doge: "DOGE",
+  avax: "AVAX",
+  link: "LINK",
 };
 
 export function resolveIconGlyph(icon) {
@@ -96,5 +105,17 @@ export const SUB_CAT_ICONS = {
   Taxes: "receipt",
   Other: "package",
 };
+
+export const INVESTMENT_CATALOG = [
+  { symbol: "BTC", name: "Bitcoin", marketType: "crypto", providerId: "bitcoin", icon: "btc" },
+  { symbol: "ETH", name: "Ether", marketType: "crypto", providerId: "ethereum", icon: "eth" },
+  { symbol: "BNB", name: "Binance Coin", marketType: "crypto", providerId: "binancecoin", icon: "bnb" },
+  { symbol: "SOL", name: "Solana", marketType: "crypto", providerId: "solana", icon: "sol" },
+  { symbol: "ADA", name: "Cardano", marketType: "crypto", providerId: "cardano", icon: "ada" },
+  { symbol: "XRP", name: "XRP", marketType: "crypto", providerId: "ripple", icon: "xrp" },
+  { symbol: "DOGE", name: "Dogecoin", marketType: "crypto", providerId: "dogecoin", icon: "doge" },
+  { symbol: "AVAX", name: "Avalanche", marketType: "crypto", providerId: "avalanche-2", icon: "avax" },
+  { symbol: "LINK", name: "Chainlink", marketType: "crypto", providerId: "chainlink", icon: "link" },
+];
 
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

@@ -41,7 +41,7 @@
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
   gap: 18px;
   margin-bottom: 30px;
 }
@@ -116,7 +116,7 @@
 
 .chartGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
   gap: 28px;
   margin-bottom: 28px;
 }
@@ -138,6 +138,149 @@
 
 .chartWrap {
   height: 320px;
+}
+
+.trendCard {
+  overflow: hidden;
+}
+
+.trendHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.trendValueRow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.trendValue {
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #101828;
+}
+
+.trendUp,
+.trendDown {
+  font-weight: 700;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.trendUp {
+  color: #16803c;
+  background: #e9f8ef;
+}
+
+.trendDown {
+  color: #dc2626;
+  background: #fff1f1;
+}
+
+.trendGain,
+.trendLoss {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.trendGain {
+  color: #16803c;
+}
+
+.trendLoss {
+  color: #dc2626;
+}
+
+.trendCaption {
+  margin-top: 10px;
+  color: #667085;
+  font-size: 14px;
+}
+
+.trendSummaryRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.summaryChip {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summaryChipLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.summaryChipValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #101828;
+}
+
+.neutral {
+  background: #f8fafc;
+}
+
+.warning {
+  background: #fff7eb;
+  border-color: #f0dbb1;
+}
+
+.positive {
+  background: #ecf8f1;
+  border-color: #c6e9d3;
+}
+
+.negative {
+  background: #fff0ef;
+  border-color: #f1c7c3;
+}
+
+.captionDivider {
+  margin: 0 8px;
+}
+
+.timeframeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+
+.timeframeBtn,
+.timeframeActive {
+  border: none;
+  background: transparent;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.timeframeActive {
+  color: #2563eb;
+  background: #eef4ff;
 }
 
 .legend {
@@ -196,6 +339,11 @@
 .categoryPct {
   color: #667085;
   font-weight: 600;
+}
+
+.emptyState {
+  color: #667085;
+  font-size: 14px;
 }
 
 .recentList {
@@ -275,6 +423,7 @@
 }
 
 @media (max-width: 1200px) {
+  .statsGrid,
   .chartGrid {
     grid-template-columns: 1fr;
   }
@@ -293,5 +442,13 @@
   .header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .trendHeader {
+    flex-direction: column;
+  }
+
+  .trendSummaryRow {
+    grid-template-columns: 1fr;
   }
 }

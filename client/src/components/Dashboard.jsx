@@ -1,15 +1,22 @@
 import { useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { fmt, fmtDate } from "../utils/formatters.js";
-import { CAT_COLORS, CAT_ICONS, MONTHS, resolveIconGlyph } from "../constants.js";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { fmt, fmtCompactCurrency, fmtDate } from "../utils/formatters.js";
+import { CAT_COLORS, CAT_ICONS, resolveIconGlyph } from "../constants.js";
 import styles from "./Dashboard.module.css";
 
-export default function Dashboard({ data, onEditTx, onDeleteTx }) {
-  const { transactions, debts, subscriptions } = data;
+const INVESTMENT_TIMEFRAMES = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y", "MAX"];
+
+export default function Dashboard({ data, onEditTx, onDeleteTx, onChangeInvestmentRange }) {
+  const { transactions, debts, subscriptions, investments, investmentTrend, investmentRange } = data;
+  const now = new Date();
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
   const balance = totalIncome - totalExpense;
   const pendingDebts = debts.reduce((sum, debt) => sum + Math.max(debt.total - debt.paid, 0), 0);
+  const netDebtImpact = debts.reduce((sum, debt) => {
+    const remaining = Math.max((Number(debt.total) || 0) - (Number(debt.paid) || 0), 0);
+    return sum + (inferDebtDirection(debt) === "owed" ? remaining : -remaining);
+  }, 0);
   const fixedMonthly = subscriptions
     .filter((item) => item.status === "active")
     .reduce((sum, item) => {
@@ -17,19 +24,44 @@ export default function Dashboard({ data, onEditTx, onDeleteTx }) {
       if (item.frequency === "weekly") return sum + item.amount * 4.33;
       return sum + item.amount;
     }, 0);
+  const remainingCommittedThisMonth = subscriptions
+    .filter((item) => item.status === "active")
+    .reduce((sum, item) => sum + remainingOccurrencesThisMonth(item, now), 0);
 
-  const chartData = useMemo(() => {
-    const now = new Date();
-    return Array.from({ length: 6 }, (_, index) => {
-      const current = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1);
-      const monthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
+  const investmentSummary = investments?.summary || {};
+  const investmentSeries = Array.isArray(investmentTrend) ? investmentTrend : [];
+  const trendData = useMemo(() => {
+    const series = investmentSeries.length
+      ? investmentSeries
+      : [{ timestamp: Date.now(), date: new Date().toISOString(), label: "Today", value: 0 }];
+
+    return series.map((point) => {
+      const pointTime = resolveTimestamp(point);
+      const balanceAtPoint = transactions.reduce((sum, tx) => {
+        const txTime = resolveTimestamp({ date: tx.date || tx.created_at, timestamp: tx.created_at });
+        if (txTime > pointTime) return sum;
+        return sum + (tx.type === "income" ? tx.amount : -tx.amount);
+      }, 0);
+
+      const netDebtImpactAtPoint = debts.reduce((sum, debt) => {
+        const debtTime = resolveTimestamp({ date: debt.created_at || debt.dueDate, timestamp: debt.created_at });
+        if (debtTime > pointTime) return sum;
+        const remaining = Math.max((Number(debt.total) || 0) - (Number(debt.paid) || 0), 0);
+        return sum + (inferDebtDirection(debt) === "owed" ? remaining : -remaining);
+      }, 0);
+
       return {
-        name: MONTHS[current.getMonth()],
-        income: transactions.filter((tx) => tx.type === "income" && tx.date?.startsWith(monthKey)).reduce((sum, tx) => sum + tx.amount, 0),
-        expenses: transactions.filter((tx) => tx.type === "expense" && tx.date?.startsWith(monthKey)).reduce((sum, tx) => sum + tx.amount, 0),
+        ...point,
+        value: Number((point.value + balanceAtPoint + netDebtImpactAtPoint).toFixed(2)),
       };
     });
-  }, [transactions]);
+  }, [debts, investmentSeries, subscriptions, transactions]);
+  const trendStart = trendData[0]?.value || 0;
+  const trendEnd = trendData[trendData.length - 1]?.value || 0;
+  const trendDelta = trendEnd - trendStart;
+  const trendDeltaPct = trendStart > 0 ? (trendDelta / trendStart) * 100 : 0;
+  const totalToday = trendEnd || balance + (investmentSummary.portfolioValue || investmentSummary.currentValue || 0) + netDebtImpact;
+  const projectedEndOfMonth = totalToday - remainingCommittedThisMonth;
 
   const categoryData = useMemo(() => {
     const grouped = transactions
@@ -63,35 +95,92 @@ export default function Dashboard({ data, onEditTx, onDeleteTx }) {
       </div>
 
       <div className={styles.statsGrid}>
-        <StatCard label="TOTAL INCOME" value={fmt(totalIncome)} accent="green" icon="In" />
-        <StatCard label="TOTAL EXPENSES" value={fmt(totalExpense)} accent="red" icon="Out" />
         <StatCard label="BALANCE" value={fmt(balance)} accent="blue" icon="Net" />
         <StatCard label="FIXED / MONTH" value={fmt(fixedMonthly)} accent="gold" icon="Fix" />
         <StatCard label="PENDING DEBTS" value={fmt(pendingDebts)} accent="gold" icon="Debt" />
+        <StatCard label="INVESTMENTS" value={fmt(investmentSummary.portfolioValue || investmentSummary.currentValue || 0)} accent="green" icon="Inv" />
       </div>
 
       <div className={styles.chartGrid}>
-        <section className={styles.card}>
-          <h2 className={styles.cardTitle}>Income vs Expenses</h2>
+        <section className={`${styles.card} ${styles.trendCard}`}>
+          <div className={styles.trendHeader}>
+            <div>
+              <h2 className={styles.cardTitle}>Total Trend</h2>
+              <div className={styles.trendValueRow}>
+                <span className={styles.trendValue}>{fmt(totalToday)}</span>
+                <span className={trendDelta >= 0 ? styles.trendUp : styles.trendDown}>
+                  {trendDelta >= 0 ? "+" : "-"} {formatPct(Math.abs(trendDeltaPct))}
+                </span>
+                <span className={trendDelta >= 0 ? styles.trendGain : styles.trendLoss}>
+                  {trendDelta >= 0 ? "+" : "-"}
+                  {fmt(Math.abs(trendDelta))} {investmentRange || "1M"}
+                </span>
+              </div>
+              <div className={styles.trendSummaryRow}>
+                <SummaryChip label="Total Today" value={fmt(totalToday)} tone="neutral" />
+                <SummaryChip label="Remaining This Month" value={fmt(remainingCommittedThisMonth)} tone="warning" />
+                <SummaryChip label="Projected End Of Month" value={fmt(projectedEndOfMonth)} tone={projectedEndOfMonth >= 0 ? "positive" : "negative"} />
+              </div>
+              <div className={styles.trendCaption}>
+                Total today = transactions + investments +/- debts
+                <span className={styles.captionDivider}>|</span>
+                Monthly commitments {fmt(fixedMonthly)}
+                <span className={styles.captionDivider}>|</span>
+                {investmentSummary.marketStatus?.message || "Price cache refresh every 45s"}
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.timeframeRow}>
+            {INVESTMENT_TIMEFRAMES.map((range) => (
+              <button
+                key={range}
+                type="button"
+                className={range === investmentRange ? styles.timeframeActive : styles.timeframeBtn}
+                onClick={() => onChangeInvestmentRange?.(range)}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
+
           <div className={styles.chartWrap}>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData} barGap={10}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#667085", fontSize: 14 }} />
+              <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="investmentTrendFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#667085", fontSize: 13 }} minTickGap={18} />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#667085", fontSize: 14 }}
-                  tickFormatter={(value) => `$${value >= 1000 ? `${Math.round(value / 1000)}k` : value}`}
+                  tick={{ fill: "#667085", fontSize: 13 }}
+                  width={72}
+                  tickFormatter={(value) => fmtCompactCurrency(value)}
                 />
-                <Tooltip formatter={(value) => fmt(value)} contentStyle={{ borderRadius: 14, border: "1px solid #d0d5dd" }} />
-                <Bar dataKey="income" fill="#2fad68" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Tooltip
+                  formatter={(value) => fmt(value)}
+                  labelFormatter={(_label, payload) => formatTooltipDate(payload?.[0]?.payload?.date)}
+                  contentStyle={{ borderRadius: 14, border: "1px solid #d0d5dd" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  fill="url(#investmentTrendFill)"
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0, fill: "#3b82f6" }}
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
+
           <div className={styles.legend}>
-            <LegendDot color="#2fad68" label="Income" />
-            <LegendDot color="#ef4444" label="Expenses" />
+            <LegendDot color="#3b82f6" label="Total portfolio value" />
           </div>
         </section>
 
@@ -119,6 +208,7 @@ export default function Dashboard({ data, onEditTx, onDeleteTx }) {
                   <span className={styles.categoryPct}>{item.pct}%</span>
                 </div>
               ))}
+              {!categoryData.length && <div className={styles.emptyState}>No expense data yet.</div>}
             </div>
           </div>
         </section>
@@ -157,6 +247,20 @@ export default function Dashboard({ data, onEditTx, onDeleteTx }) {
   );
 }
 
+function resolveTimestamp(point) {
+  if (Number.isFinite(point?.timestamp)) return Number(point.timestamp);
+  if (point?.date) return new Date(point.date).getTime();
+  return 0;
+}
+
+function inferDebtDirection(debt) {
+  const creditor = (debt.creditor || "").toLowerCase();
+  const note = (debt.note || "").toLowerCase();
+  if (note.includes("owed to me") || note.includes("split") || note.includes("they owe")) return "owed";
+  if (creditor.includes("sarah") || creditor.includes("mike")) return "owed";
+  return "i-owe";
+}
+
 function StatCard({ label, value, accent, icon }) {
   return (
     <div className={`${styles.statCard} ${styles[accent]}`}>
@@ -176,4 +280,62 @@ function LegendDot({ color, label }) {
       {label}
     </div>
   );
+}
+
+function SummaryChip({ label, value, tone }) {
+  return (
+    <div className={`${styles.summaryChip} ${styles[tone] || ""}`}>
+      <span className={styles.summaryChipLabel}>{label}</span>
+      <span className={styles.summaryChipValue}>{value}</span>
+    </div>
+  );
+}
+
+function formatPct(value) {
+  return `${(value || 0).toFixed(2)}%`;
+}
+
+function formatTooltipDate(date) {
+  if (!date) {
+    return "";
+  }
+
+  return new Date(date).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function remainingOccurrencesThisMonth(item, now) {
+  const nextBilling = item.nextBilling || item.next_billing;
+  if (!nextBilling) return 0;
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  monthEnd.setHours(23, 59, 59, 999);
+
+  const current = new Date(`${nextBilling}T00:00:00`);
+  if (Number.isNaN(current.getTime())) return 0;
+
+  if (item.frequency === "monthly" || item.frequency === "yearly") {
+    return current >= today && current <= monthEnd ? Number(item.amount) || 0 : 0;
+  }
+
+  if (item.frequency === "weekly") {
+    let total = 0;
+    while (current < today) {
+      current.setDate(current.getDate() + 7);
+    }
+    while (current <= monthEnd) {
+      total += Number(item.amount) || 0;
+      current.setDate(current.getDate() + 7);
+    }
+    return total;
+  }
+
+  return 0;
 }
