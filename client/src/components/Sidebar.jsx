@@ -8,7 +8,7 @@ const NAV = [
   { key: "debts", label: "Debts", icon: "debt" },
 ];
 
-export default function Sidebar({ page, setPage, user }) {
+export default function Sidebar({ page, setPage, user, onLogout }) {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
@@ -23,7 +23,7 @@ export default function Sidebar({ page, setPage, user }) {
             onClick={() => setPage(item.key)}
             className={`${styles.navBtn} ${page === item.key ? styles.active : ""}`}
           >
-            <NavIcon type={item.icon} active={page === item.key} />
+            <NavIcon type={item.icon} />
             <span>{item.label}</span>
           </button>
         ))}
@@ -35,7 +35,7 @@ export default function Sidebar({ page, setPage, user }) {
           <div className={styles.userName}>{user.name}</div>
           <div className={styles.userEmail}>{user.email}</div>
         </div>
-        <button className={styles.logoutBtn} type="button">
+        <button className={styles.logoutBtn} type="button" onClick={onLogout} title="Log out">
           Exit
         </button>
       </div>
@@ -43,8 +43,8 @@ export default function Sidebar({ page, setPage, user }) {
   );
 }
 
-function NavIcon({ type, active }) {
-  const stroke = active ? "#23a36b" : "#667085";
+function NavIcon({ type }) {
+  const stroke = "currentColor";
 
   if (type === "grid") {
     return (

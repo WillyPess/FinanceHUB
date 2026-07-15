@@ -1,0 +1,30 @@
+:root {
+  /* app surfaces (dark navy) — panel-bg is the real page background, edge to edge */
+  --panel-bg: #12162c;
+  --surface-1: #171b38;
+  --surface-2: #1d2247;
+  --surface-3: #262c58;
+  --surface-hover: #2b3163;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #ffffff;
+  --text-secondary: #a6acd6;
+  --text-muted: #7d83b8;
+
+  /* validated brand accents (dark surface, CVD-checked) */
+  --accent-blue: #5b7cff;
+  --accent-teal: #1fbf8f;
+  --accent-gold: #c9820f;
+  --accent-magenta: #ee4a89;
+
+  --positive: #1fbf8f;
+  --negative: #ef5b5b;
+
+  --shadow-card: 0 2px 10px rgba(5, 8, 25, 0.25);
+
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+}

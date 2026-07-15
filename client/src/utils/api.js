@@ -1,16 +1,38 @@
+import { getAccessToken, refreshAccessToken, notifySessionExpired } from "./authClient.js";
+
 const BASE = "/api";
 
-async function req(method, path, body) {
+async function rawRequest(method, path, body) {
   const url = method === "GET"
     ? `${BASE}${path}${path.includes("?") ? "&" : "?"}_ts=${Date.now()}`
     : `${BASE}${path}`;
 
-  const res = await fetch(url, {
+  const headers = { "Content-Type": "application/json" };
+  const token = getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  return fetch(url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers,
     cache: "no-store",
     body: body ? JSON.stringify(body) : undefined,
   });
+}
+
+// Attaches the bearer token to every call; on a 401 it silently refreshes once and
+// retries, and only gives up (redirecting to login) if the refresh itself fails.
+async function req(method, path, body) {
+  let res = await rawRequest(method, path, body);
+
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (!newToken) {
+      notifySessionExpired();
+      throw new Error("Session expired");
+    }
+    res = await rawRequest(method, path, body);
+  }
+
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 }

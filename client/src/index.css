@@ -1,7 +1,18 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { min-height: 100%; }
-body { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; background: linear-gradient(180deg, #f0f3ef 0%, #e7ece8 100%); color: #0f172a; }
+html, body { overflow-x: hidden; }
+body { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; background: var(--panel-bg); color: var(--text-primary); }
 button, input, select, textarea { font-family: inherit; }
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
+
+.app-main { padding-bottom: 24px; }
+@media (max-width: 900px) {
+  .app-main { padding-bottom: 92px; }
+}
+
+.app-header { padding: 22px 30px 0; }
+@media (max-width: 640px) {
+  .app-header { padding: 18px 16px 0; }
+}

@@ -1,12 +1,16 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const Database = require("better-sqlite3");
-const path = require("path");
+const cookieParser = require("cookie-parser");
+const db = require("./db");
+const { migrate } = require("./migrate");
+const { createAuth } = require("./auth");
+const { createAuthRouter } = require("./authRoutes");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, "financehub.db");
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const INVESTMENT_REFRESH_MS = 45_000;
 const TREND_CACHE_TTL_MS = 5 * 60 * 1000;
 const QUOTE_RATE_LIMIT_COOLDOWN_MS = 5 * 60 * 1000;
@@ -25,310 +29,34 @@ const INVESTMENT_CATALOG = [
   { symbol: "LINK", name: "Chainlink", marketType: "crypto", providerId: "chainlink", icon: "link" },
 ];
 
-const appMetaInsert = "INSERT INTO app_meta (key, value) VALUES (?, ?)";
-const db = new Database(DB_PATH);
 const investmentTrendCache = new Map();
 let quoteStatus = { mode: "idle", message: "Waiting for quotes", nextRetryAt: null };
 
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS transactions (
-    id          TEXT PRIMARY KEY,
-    icon        TEXT,
-    description TEXT NOT NULL,
-    category    TEXT,
-    date        TEXT,
-    amount      REAL NOT NULL,
-    type        TEXT CHECK(type IN ('income','expense')) NOT NULL,
-    created_at  TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS debts (
-    id          TEXT PRIMARY KEY,
-    creditor    TEXT NOT NULL,
-    total       REAL NOT NULL,
-    paid        REAL DEFAULT 0,
-    due_date    TEXT,
-    note        TEXT,
-    created_at  TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS subscriptions (
-    id           TEXT PRIMARY KEY,
-    kind         TEXT CHECK(kind IN ('subscription','bill')) DEFAULT 'subscription',
-    icon         TEXT,
-    name         TEXT NOT NULL,
-    category     TEXT,
-    amount       REAL NOT NULL,
-    frequency    TEXT CHECK(frequency IN ('weekly','monthly','yearly')) DEFAULT 'monthly',
-    next_billing TEXT,
-    status       TEXT CHECK(status IN ('active','paused','cancelled')) DEFAULT 'active',
-    note         TEXT,
-    created_at   TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS investments_assets (
-    id              TEXT PRIMARY KEY,
-    symbol          TEXT NOT NULL,
-    name            TEXT NOT NULL,
-    market_type     TEXT CHECK(market_type IN ('crypto')) DEFAULT 'crypto',
-    provider_id     TEXT NOT NULL,
-    icon            TEXT,
-    vs_currency     TEXT DEFAULT 'aud',
-    last_price      REAL,
-    day_change_pct  REAL,
-    last_updated_at TEXT,
-    created_at      TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS investment_lots (
-    id             TEXT PRIMARY KEY,
-    asset_id       TEXT NOT NULL REFERENCES investments_assets(id) ON DELETE CASCADE,
-    purchase_date  TEXT,
-    invested_amount REAL NOT NULL DEFAULT 0,
-    purchase_price REAL NOT NULL,
-    quantity       REAL NOT NULL,
-    note           TEXT,
-    created_at     TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS market_prices (
-    symbol         TEXT PRIMARY KEY,
-    price          REAL NOT NULL,
-    previous_price REAL,
-    day_change_pct REAL,
-    updated_at     TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS app_meta (
-    key          TEXT PRIMARY KEY,
-    value        TEXT,
-    created_at   TEXT DEFAULT (datetime('now'))
-  );
-`);
-
-ensureSubscriptionKind();
-ensureInvestmentLotColumns();
-ensureSeeded();
-
-app.use(cors({ origin: CLIENT_ORIGIN }));
-app.use(express.json());
-
-app.get("/api/health", (_req, res) => {
-  res.json({
-    ok: true,
-    port: PORT,
-    dbPath: DB_PATH,
-    clientOrigin: CLIENT_ORIGIN,
-    investmentRefreshMs: INVESTMENT_REFRESH_MS,
-    priceCacheRefreshMs: INVESTMENT_REFRESH_MS,
-  });
-});
-
-app.get("/api/transactions", (_req, res) => {
-  const rows = db.prepare("SELECT * FROM transactions ORDER BY date DESC, created_at DESC").all();
-  res.json(rows.map((row) => ({ ...row, desc: row.description })));
-});
-
-app.post("/api/transactions", (req, res) => {
-  const { id, icon, desc, category, date, amount, type } = req.body;
-  const nextId = id || Date.now().toString();
-  db.prepare(
-    "INSERT INTO transactions (id, icon, description, category, date, amount, type) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).run(nextId, icon, desc, category, date, amount, type);
-  const row = db.prepare("SELECT * FROM transactions WHERE id = ?").get(nextId);
-  res.json({ ...row, desc: row.description });
-});
-
-app.put("/api/transactions/:id", (req, res) => {
-  const { icon, desc, category, date, amount, type } = req.body;
-  db.prepare(
-    "UPDATE transactions SET icon = ?, description = ?, category = ?, date = ?, amount = ?, type = ? WHERE id = ?"
-  ).run(icon, desc, category, date, amount, type, req.params.id);
-  const row = db.prepare("SELECT * FROM transactions WHERE id = ?").get(req.params.id);
-  res.json({ ...row, desc: row.description });
-});
-
-app.delete("/api/transactions/:id", (req, res) => {
-  db.prepare("DELETE FROM transactions WHERE id = ?").run(req.params.id);
-  res.json({ ok: true, id: req.params.id });
-});
-
-app.get("/api/debts", (_req, res) => {
-  const rows = db.prepare("SELECT * FROM debts ORDER BY created_at DESC").all();
-  res.json(rows.map((row) => ({ ...row, dueDate: row.due_date })));
-});
-
-app.post("/api/debts", (req, res) => {
-  const { id, creditor, total, paid, dueDate, note } = req.body;
-  const nextId = id || Date.now().toString();
-  db.prepare(
-    "INSERT INTO debts (id, creditor, total, paid, due_date, note) VALUES (?, ?, ?, ?, ?, ?)"
-  ).run(nextId, creditor, total, paid, dueDate, note);
-  const row = db.prepare("SELECT * FROM debts WHERE id = ?").get(nextId);
-  res.json({ ...row, dueDate: row.due_date });
-});
-
-app.put("/api/debts/:id", (req, res) => {
-  const { creditor, total, paid, dueDate, note } = req.body;
-  db.prepare(
-    "UPDATE debts SET creditor = ?, total = ?, paid = ?, due_date = ?, note = ? WHERE id = ?"
-  ).run(creditor, total, paid, dueDate, note, req.params.id);
-  const row = db.prepare("SELECT * FROM debts WHERE id = ?").get(req.params.id);
-  res.json({ ...row, dueDate: row.due_date });
-});
-
-app.delete("/api/debts/:id", (req, res) => {
-  db.prepare("DELETE FROM debts WHERE id = ?").run(req.params.id);
-  res.json({ ok: true, id: req.params.id });
-});
-
-app.get("/api/subscriptions", (_req, res) => {
-  const rows = db.prepare("SELECT * FROM subscriptions ORDER BY status, created_at DESC").all();
-  res.json(rows.map((row) => ({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing })));
-});
-
-app.post("/api/subscriptions", (req, res) => {
-  const { id, kind, icon, name, category, amount, frequency, nextBilling, status, note } = req.body;
-  const nextId = id || Date.now().toString();
-  db.prepare(
-    "INSERT INTO subscriptions (id, kind, icon, name, category, amount, frequency, next_billing, status, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  ).run(nextId, kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note);
-  const row = db.prepare("SELECT * FROM subscriptions WHERE id = ?").get(nextId);
-  res.json({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing });
-});
-
-app.put("/api/subscriptions/:id", (req, res) => {
-  const { kind, icon, name, category, amount, frequency, nextBilling, status, note } = req.body;
-  db.prepare(
-    "UPDATE subscriptions SET kind = ?, icon = ?, name = ?, category = ?, amount = ?, frequency = ?, next_billing = ?, status = ?, note = ? WHERE id = ?"
-  ).run(kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note, req.params.id);
-  const row = db.prepare("SELECT * FROM subscriptions WHERE id = ?").get(req.params.id);
-  res.json({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing });
-});
-
-app.delete("/api/subscriptions/:id", (req, res) => {
-  db.prepare("DELETE FROM subscriptions WHERE id = ?").run(req.params.id);
-  res.json({ ok: true, id: req.params.id });
-});
-
-app.get("/api/investments/catalog", (_req, res) => {
-  const marketPricesBySymbol = getMarketPricesBySymbol();
-  res.json(INVESTMENT_CATALOG.map((asset) => ({
-    ...asset,
-    currentPrice: marketPricesBySymbol[asset.symbol]?.currentPrice ?? null,
-    previousPrice: marketPricesBySymbol[asset.symbol]?.previousClosePrice ?? null,
-    dayChangePct: marketPricesBySymbol[asset.symbol]?.dayChangePct ?? null,
-    lastUpdatedAt: marketPricesBySymbol[asset.symbol]?.updatedAt ?? null,
-  })));
-});
-
-app.get("/api/investments", (_req, res) => {
-  res.json(getInvestmentsPayload());
-});
-
-app.get("/api/investments/trend", async (req, res) => {
-  const range = String(req.query.range || req.query.timeframe || req.query.days || "1M").toUpperCase();
-  try {
-    const trend = await getInvestmentTrend(range);
-    res.json(trend);
-  } catch (error) {
-    console.error("Investment trend failed:", error.message);
-    res.json([]);
-  }
-});
-
-app.post("/api/investments/lots", (req, res) => {
-  const body = req.body || {};
-  const lotId = body.id || `lot-${Date.now()}`;
-  const identity = resolveInvestmentIdentity(body);
-  const purchaseDate = body.purchaseDate || body.purchase_date || new Date().toISOString().slice(0, 10);
-  const investedAmount = Number(body.investedAmount ?? body.invested_amount);
-  const quantity = Number(body.quantity);
-  const purchasePriceRaw = Number(body.purchasePrice ?? body.purchase_price);
-  const note = body.note || "";
-
-  if (!identity) {
-    return res.status(400).json({ error: "Unsupported asset. Pick one from the catalog or provide a valid providerId." });
+async function ensureSeeded() {
+  const seeded = await db.get("SELECT value FROM app_meta WHERE key = ?", ["seed_version"]);
+  if (seeded) {
+    return;
   }
 
-  if (!Number.isFinite(quantity) || quantity <= 0) {
-    return res.status(400).json({ error: "Invalid quantity." });
+  const counts = {
+    transactions: (await db.get("SELECT COUNT(*) AS count FROM transactions")).count,
+    debts: (await db.get("SELECT COUNT(*) AS count FROM debts")).count,
+    subscriptions: (await db.get("SELECT COUNT(*) AS count FROM subscriptions")).count,
+  };
+
+  if (counts.transactions > 0 || counts.debts > 0 || counts.subscriptions > 0) {
+    await setAppMetaValue("seed_version", "1");
+    return;
   }
 
-  if (!Number.isFinite(investedAmount) || investedAmount <= 0) {
-    return res.status(400).json({ error: "Invalid invested amount." });
-  }
-
-  const purchasePrice = Number.isFinite(purchasePriceRaw) && purchasePriceRaw > 0
-    ? purchasePriceRaw
-    : investedAmount / quantity;
-
-  const assetId = ensureInvestmentAsset(identity);
-  db.prepare(
-    "INSERT INTO investment_lots (id, asset_id, purchase_date, invested_amount, purchase_price, quantity, note) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).run(lotId, assetId, purchaseDate, investedAmount, purchasePrice, quantity, note);
-
-  triggerQuoteRefresh();
-  const asset = getInvestmentAssetPayload(assetId);
-  res.json(asset);
-});
-
-app.delete("/api/investments/lots/:id", (req, res) => {
-  const lot = db.prepare("SELECT asset_id FROM investment_lots WHERE id = ?").get(req.params.id);
-  if (!lot) {
-    return res.status(404).json({ error: "Investment lot not found." });
-  }
-
-  db.prepare("DELETE FROM investment_lots WHERE id = ?").run(req.params.id);
-  const remaining = db.prepare("SELECT COUNT(*) AS count FROM investment_lots WHERE asset_id = ?").get(lot.asset_id).count;
-  if (remaining === 0) {
-    db.prepare("DELETE FROM investments_assets WHERE id = ?").run(lot.asset_id);
-  }
-
-  res.json({ ok: true, id: req.params.id });
-});
-
-app.listen(PORT, () => {
-  console.log(`FinanceHub API running at http://localhost:${PORT}`);
-  console.log(`Database: ${DB_PATH}`);
-  console.log(`Health: http://localhost:${PORT}/api/health`);
-});
-
-let quoteRefreshInFlight = false;
-let nextQuoteRefreshAt = 0;
-triggerQuoteRefresh();
-setInterval(() => {
-  triggerQuoteRefresh();
-}, INVESTMENT_REFRESH_MS);
-
-function ensureSubscriptionKind() {
-  const subscriptionColumns = db.prepare("PRAGMA table_info(subscriptions)").all();
-  if (!subscriptionColumns.some((column) => column.name === "kind")) {
-    db.exec(
-      "ALTER TABLE subscriptions ADD COLUMN kind TEXT CHECK(kind IN ('subscription','bill')) DEFAULT 'subscription'"
-    );
-    db.exec("UPDATE subscriptions SET kind = 'subscription' WHERE kind IS NULL OR kind = ''");
-  }
+  await seedTransactions();
+  await seedSubscriptions();
+  await seedDebts();
+  await setAppMetaValue("seed_version", "1");
 }
 
-function ensureInvestmentLotColumns() {
-  const lotColumns = db.prepare("PRAGMA table_info(investment_lots)").all();
-  if (!lotColumns.some((column) => column.name === "invested_amount")) {
-    db.exec("ALTER TABLE investment_lots ADD COLUMN invested_amount REAL NOT NULL DEFAULT 0");
-    db.exec("UPDATE investment_lots SET invested_amount = purchase_price * quantity WHERE invested_amount = 0");
-  }
-}
-
-
-function seedTransactions() {
-  const insert = db.prepare(
-    "INSERT INTO transactions (id, icon, description, category, date, amount, type) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  );
-
-  [
+async function seedTransactions() {
+  const rows = [
     ["1", "tickets", "Concert tickets", "Entertainment", "2026-03-07", 200, "expense"],
     ["2", "car", "Gas and parking", "Transport", "2026-03-06", 150, "expense"],
     ["3", "work", "Website project", "Freelance", "2026-03-05", 1500, "income"],
@@ -344,15 +72,18 @@ function seedTransactions() {
     ["13", "salary", "Monthly salary", "Salary", "2026-01-01", 5200, "income"],
     ["14", "home", "Rent payment", "Housing", "2026-01-01", 1200, "expense"],
     ["15", "salary", "Monthly salary", "Salary", "2025-12-01", 1300, "income"],
-  ].forEach((row) => insert.run(...row));
+  ];
+
+  await db.transaction(
+    rows.map(([id, icon, description, category, date, amount, type]) => ({
+      sql: "INSERT INTO transactions (id, icon, description, category, date, amount, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      args: [id, icon, description, category, date, amount, type],
+    }))
+  );
 }
 
-function seedSubscriptions() {
-  const insert = db.prepare(
-    "INSERT INTO subscriptions (id, kind, icon, name, category, amount, frequency, next_billing, status, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  );
-
-  [
+async function seedSubscriptions() {
+  const rows = [
     ["s1", "subscription", "tv", "Netflix", "Streaming", 15.99, "monthly", "2026-03-20", "active", "Family plan"],
     ["s2", "subscription", "music", "Spotify", "Streaming", 9.99, "monthly", "2026-03-18", "active", ""],
     ["s3", "bill", "internet", "Internet", "Internet", 89.9, "monthly", "2026-03-15", "active", "300mb fiber"],
@@ -360,63 +91,51 @@ function seedSubscriptions() {
     ["s5", "subscription", "design", "Adobe CC", "Software", 54.99, "monthly", "2026-03-25", "paused", "Temporarily paused"],
     ["s6", "bill", "phone", "Mobile plan", "Phone", 49.9, "monthly", "2026-03-22", "active", "Post-paid plan"],
     ["s7", "bill", "power", "Electricity", "Energy", 110, "monthly", "2026-03-19", "active", "Average monthly bill"],
-  ].forEach((row) => insert.run(...row));
+  ];
+
+  await db.transaction(
+    rows.map(([id, kind, icon, name, category, amount, frequency, nextBilling, status, note]) => ({
+      sql: "INSERT INTO subscriptions (id, kind, icon, name, category, amount, frequency, next_billing, status, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      args: [id, kind, icon, name, category, amount, frequency, nextBilling, status, note],
+    }))
+  );
 }
 
-function seedDebts() {
-  const insert = db.prepare(
-    "INSERT INTO debts (id, creditor, total, paid, due_date, note) VALUES (?, ?, ?, ?, ?, ?)"
-  );
-
-  [
+async function seedDebts() {
+  const rows = [
     ["d1", "Bank Loan", 5000, 2250, "2026-06-30", "Monthly installments"],
     ["d2", "Credit Card", 1200, 450, "2026-04-15", "Pay minimum or full"],
     ["d3", "Friend Loan", 550, 550, "2026-03-20", "Laptop loan"],
-  ].forEach((row) => insert.run(...row));
+  ];
+
+  await db.transaction(
+    rows.map(([id, creditor, total, paid, dueDate, note]) => ({
+      sql: "INSERT INTO debts (id, creditor, total, paid, due_date, note) VALUES (?, ?, ?, ?, ?, ?)",
+      args: [id, creditor, total, paid, dueDate, note],
+    }))
+  );
 }
 
-function ensureSeeded() {
-  const seeded = db.prepare("SELECT value FROM app_meta WHERE key = ?").get("seed_version");
-  if (seeded) {
-    return;
-  }
-
-  const counts = {
-    transactions: db.prepare("SELECT COUNT(*) AS count FROM transactions").get().count,
-    debts: db.prepare("SELECT COUNT(*) AS count FROM debts").get().count,
-    subscriptions: db.prepare("SELECT COUNT(*) AS count FROM subscriptions").get().count,
-  };
-
-  if (counts.transactions > 0 || counts.debts > 0 || counts.subscriptions > 0) {
-    db.prepare(appMetaInsert).run("seed_version", "1");
-    return;
-  }
-
-  seedTransactions();
-  seedSubscriptions();
-  seedDebts();
-  db.prepare(appMetaInsert).run("seed_version", "1");
-}
-
-function getAppMetaValue(key) {
-  const row = db.prepare("SELECT value FROM app_meta WHERE key = ?").get(key);
+async function getAppMetaValue(key) {
+  const row = await db.get("SELECT value FROM app_meta WHERE key = ?", [key]);
   return row?.value ?? null;
 }
 
-function setAppMetaValue(key, value) {
-  db.prepare(
+async function setAppMetaValue(key, value) {
+  await db.run(
     `INSERT INTO app_meta (key, value)
      VALUES (?, ?)
-     ON CONFLICT(key) DO UPDATE SET value = excluded.value`
-  ).run(key, value);
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    [key, value]
+  );
 }
 
-function isManualMarketLocked() {
-  return getAppMetaValue(MANUAL_MARKET_LOCK_KEY) === "1";
+async function isManualMarketLocked() {
+  return (await getAppMetaValue(MANUAL_MARKET_LOCK_KEY)) === "1";
 }
 
-function getManualTrendOverride(rangeKey) {
-  const raw = getAppMetaValue(`manual_trend_${rangeKey}`);
+async function getManualTrendOverride(rangeKey) {
+  const raw = await getAppMetaValue(`manual_trend_${rangeKey}`);
   if (!raw) return null;
 
   try {
@@ -427,9 +146,9 @@ function getManualTrendOverride(rangeKey) {
   }
 }
 
-function resolveInvestmentIdentity(body) {
+async function resolveInvestmentIdentity(body) {
   if (body.assetId) {
-    const asset = db.prepare("SELECT * FROM investments_assets WHERE id = ?").get(body.assetId);
+    const asset = await db.get("SELECT * FROM investments_assets WHERE id = ?", [body.assetId]);
     if (!asset) return null;
     return {
       assetId: asset.id,
@@ -465,27 +184,29 @@ function resolveInvestmentIdentity(body) {
   };
 }
 
-function ensureInvestmentAsset(identity) {
+async function ensureInvestmentAsset(identity) {
   if (identity.assetId) {
     return identity.assetId;
   }
 
-  const existing = db.prepare(
-    "SELECT id FROM investments_assets WHERE symbol = ? AND provider_id = ?"
-  ).get(identity.symbol, identity.providerId);
+  const existing = await db.get(
+    "SELECT id FROM investments_assets WHERE symbol = ? AND provider_id = ?",
+    [identity.symbol, identity.providerId]
+  );
   if (existing) {
     return existing.id;
   }
 
   const assetId = `asset-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
-  db.prepare(
-    "INSERT INTO investments_assets (id, symbol, name, market_type, provider_id, icon, vs_currency) VALUES (?, ?, ?, ?, ?, ?, 'aud')"
-  ).run(assetId, identity.symbol, identity.name, identity.marketType, identity.providerId, identity.icon);
+  await db.run(
+    "INSERT INTO investments_assets (id, symbol, name, market_type, provider_id, icon, vs_currency) VALUES (?, ?, ?, ?, ?, ?, 'aud')",
+    [assetId, identity.symbol, identity.name, identity.marketType, identity.providerId, identity.icon]
+  );
   return assetId;
 }
 
-function getMarketPricesBySymbol() {
-  const rows = db.prepare("SELECT symbol, price, previous_price, day_change_pct, updated_at FROM market_prices").all();
+async function getMarketPricesBySymbol() {
+  const rows = await db.all("SELECT symbol, price, previous_price, day_change_pct, updated_at FROM market_prices");
   return rows.reduce((acc, row) => {
     acc[row.symbol] = {
       currentPrice: row.price == null ? null : Number(row.price),
@@ -497,10 +218,10 @@ function getMarketPricesBySymbol() {
   }, {});
 }
 
-function getInvestmentsPayload() {
-  const assets = db.prepare("SELECT * FROM investments_assets ORDER BY created_at DESC").all();
-  const lots = db.prepare("SELECT * FROM investment_lots ORDER BY purchase_date DESC, created_at DESC").all();
-  const marketPricesBySymbol = getMarketPricesBySymbol();
+async function getInvestmentsPayload() {
+  const assets = await db.all("SELECT * FROM investments_assets ORDER BY created_at DESC");
+  const lots = await db.all("SELECT * FROM investment_lots ORDER BY purchase_date DESC, created_at DESC");
+  const marketPricesBySymbol = await getMarketPricesBySymbol();
   const lotsByAsset = lots.reduce((acc, lot) => {
     if (!acc[lot.asset_id]) acc[lot.asset_id] = [];
     acc[lot.asset_id].push({
@@ -515,6 +236,10 @@ function getInvestmentsPayload() {
     });
     return acc;
   }, {});
+
+  const marketStatusValue = (await isManualMarketLocked())
+    ? { mode: "locked", message: "Manual market snapshot", nextRetryAt: null }
+    : quoteStatus;
 
   const items = assets.map((asset) => {
     const assetLots = lotsByAsset[asset.id] || [];
@@ -602,9 +327,7 @@ function getInvestmentsPayload() {
   summary.totalGainPct = summary.portfolioPlPct;
   summary.dayGainValue = summary.dayMove;
   summary.assetCount = items.length;
-  summary.marketStatus = isManualMarketLocked()
-    ? { mode: "locked", message: "Manual market snapshot", nextRetryAt: null }
-    : quoteStatus;
+  summary.marketStatus = marketStatusValue;
   summary.lastUpdatedAt = items.reduce((latest, item) => {
     if (!item.lastUpdatedAt) return latest;
     if (!latest) return item.lastUpdatedAt;
@@ -614,13 +337,13 @@ function getInvestmentsPayload() {
   return { items, summary };
 }
 
-function getInvestmentAssetPayload(assetId) {
-  const payload = getInvestmentsPayload();
+async function getInvestmentAssetPayload(assetId) {
+  const payload = await getInvestmentsPayload();
   return payload.items.find((item) => item.id === assetId) || null;
 }
 
 async function triggerQuoteRefresh() {
-  if (isManualMarketLocked()) {
+  if (await isManualMarketLocked()) {
     quoteStatus = { mode: "locked", message: "Manual market snapshot", nextRetryAt: null };
     return;
   }
@@ -633,7 +356,7 @@ async function triggerQuoteRefresh() {
     return;
   }
 
-  const assets = db.prepare("SELECT id, symbol, provider_id, market_type FROM investments_assets").all();
+  const assets = await db.all("SELECT id, symbol, provider_id, market_type FROM investments_assets");
   if (!assets.length) {
     return;
   }
@@ -683,50 +406,51 @@ async function refreshCryptoQuotes(assets) {
 
   const data = await response.json();
 
-  const updateAsset = db.prepare(
-    "UPDATE investments_assets SET last_price = ?, day_change_pct = ?, last_updated_at = datetime('now') WHERE id = ?"
-  );
-  const upsertMarketPrice = db.prepare(
-    `INSERT INTO market_prices (symbol, price, previous_price, day_change_pct, updated_at)
-     VALUES (?, ?, ?, ?, datetime('now'))
-     ON CONFLICT(symbol) DO UPDATE SET
-       price = excluded.price,
-       previous_price = excluded.previous_price,
-       day_change_pct = excluded.day_change_pct,
-       updated_at = excluded.updated_at`
-  );
+  const statements = [];
+  assets.forEach((asset) => {
+    const quote = data[asset.provider_id];
+    if (!quote || quote[MARKET_VS_CURRENCY] == null) return;
+    const price = Number(quote[MARKET_VS_CURRENCY]);
+    const dayChangePct = quote[`${MARKET_VS_CURRENCY}_24h_change`] == null ? null : Number(quote[`${MARKET_VS_CURRENCY}_24h_change`]);
+    const previousPrice = Number.isFinite(dayChangePct) && dayChangePct !== -100
+      ? price / (1 + (dayChangePct / 100))
+      : null;
 
-  const write = db.transaction((rows) => {
-    rows.forEach((asset) => {
-      const quote = data[asset.provider_id];
-      if (!quote || quote[MARKET_VS_CURRENCY] == null) return;
-      const price = Number(quote[MARKET_VS_CURRENCY]);
-      const dayChangePct = quote[`${MARKET_VS_CURRENCY}_24h_change`] == null ? null : Number(quote[`${MARKET_VS_CURRENCY}_24h_change`]);
-      const previousPrice = Number.isFinite(dayChangePct) && dayChangePct !== -100
-        ? price / (1 + (dayChangePct / 100))
-        : null;
-      updateAsset.run(price, dayChangePct, asset.id);
-      upsertMarketPrice.run(asset.symbol, price, previousPrice, dayChangePct);
+    statements.push({
+      sql: "UPDATE investments_assets SET last_price = ?, day_change_pct = ?, last_updated_at = datetime('now') WHERE id = ?",
+      args: [price, dayChangePct, asset.id],
+    });
+    statements.push({
+      sql: `INSERT INTO market_prices (symbol, price, previous_price, day_change_pct, updated_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(symbol) DO UPDATE SET
+              price = excluded.price,
+              previous_price = excluded.previous_price,
+              day_change_pct = excluded.day_change_pct,
+              updated_at = excluded.updated_at`,
+      args: [asset.symbol, price, previousPrice, dayChangePct],
     });
   });
 
-  write(assets);
+  if (statements.length) {
+    await db.transaction(statements);
+  }
 }
 
 async function getInvestmentTrend(range) {
-  const assets = db.prepare("SELECT * FROM investments_assets ORDER BY created_at ASC").all();
-  const marketPricesBySymbol = getMarketPricesBySymbol();
+  const assets = await db.all("SELECT * FROM investments_assets ORDER BY created_at ASC");
+  const marketPricesBySymbol = await getMarketPricesBySymbol();
   if (!assets.length) {
     return [];
   }
 
   const rangeConfig = resolveTrendRange(range);
-  const manualTrend = getManualTrendOverride(rangeConfig.key);
+  const manualTrend = await getManualTrendOverride(rangeConfig.key);
   if (manualTrend?.length) {
     return manualTrend;
   }
 
-  const lots = db.prepare("SELECT asset_id, purchase_date, quantity FROM investment_lots ORDER BY purchase_date ASC, created_at ASC").all();
+  const lots = await db.all("SELECT asset_id, purchase_date, quantity FROM investment_lots ORDER BY purchase_date ASC, created_at ASC");
   const lotsByAsset = lots.reduce((acc, lot) => {
     if (!acc[lot.asset_id]) acc[lot.asset_id] = [];
     acc[lot.asset_id].push({
@@ -931,3 +655,220 @@ function buildSyntheticTimeline(rangeConfig) {
   }
   return points;
 }
+
+let quoteRefreshInFlight = false;
+let nextQuoteRefreshAt = 0;
+
+async function start() {
+  await migrate();
+  await ensureSeeded();
+
+  const auth = createAuth();
+
+  app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+  app.use(express.json());
+  app.use(cookieParser());
+
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      ok: true,
+      port: PORT,
+      dbTarget: process.env.TURSO_DATABASE_URL ? "turso" : "file:local.db",
+      clientOrigin: FRONTEND_ORIGIN,
+      investmentRefreshMs: INVESTMENT_REFRESH_MS,
+      priceCacheRefreshMs: INVESTMENT_REFRESH_MS,
+    });
+  });
+
+  app.use("/auth", createAuthRouter(auth, { isProduction: IS_PRODUCTION }));
+
+  // Everything under /api requires a valid access token.
+  app.use("/api", auth.requireAuth);
+
+  app.get("/api/transactions", async (_req, res) => {
+    const rows = await db.all("SELECT * FROM transactions ORDER BY date DESC, created_at DESC");
+    res.json(rows.map((row) => ({ ...row, desc: row.description })));
+  });
+
+  app.post("/api/transactions", async (req, res) => {
+    const { id, icon, desc, category, date, amount, type } = req.body;
+    const nextId = id || Date.now().toString();
+    await db.run(
+      "INSERT INTO transactions (id, icon, description, category, date, amount, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [nextId, icon, desc, category, date, amount, type]
+    );
+    const row = await db.get("SELECT * FROM transactions WHERE id = ?", [nextId]);
+    res.json({ ...row, desc: row.description });
+  });
+
+  app.put("/api/transactions/:id", async (req, res) => {
+    const { icon, desc, category, date, amount, type } = req.body;
+    await db.run(
+      "UPDATE transactions SET icon = ?, description = ?, category = ?, date = ?, amount = ?, type = ? WHERE id = ?",
+      [icon, desc, category, date, amount, type, req.params.id]
+    );
+    const row = await db.get("SELECT * FROM transactions WHERE id = ?", [req.params.id]);
+    res.json({ ...row, desc: row.description });
+  });
+
+  app.delete("/api/transactions/:id", async (req, res) => {
+    await db.run("DELETE FROM transactions WHERE id = ?", [req.params.id]);
+    res.json({ ok: true, id: req.params.id });
+  });
+
+  app.get("/api/debts", async (_req, res) => {
+    const rows = await db.all("SELECT * FROM debts ORDER BY created_at DESC");
+    res.json(rows.map((row) => ({ ...row, dueDate: row.due_date })));
+  });
+
+  app.post("/api/debts", async (req, res) => {
+    const { id, creditor, total, paid, dueDate, note } = req.body;
+    const nextId = id || Date.now().toString();
+    await db.run(
+      "INSERT INTO debts (id, creditor, total, paid, due_date, note) VALUES (?, ?, ?, ?, ?, ?)",
+      [nextId, creditor, total, paid, dueDate, note]
+    );
+    const row = await db.get("SELECT * FROM debts WHERE id = ?", [nextId]);
+    res.json({ ...row, dueDate: row.due_date });
+  });
+
+  app.put("/api/debts/:id", async (req, res) => {
+    const { creditor, total, paid, dueDate, note } = req.body;
+    await db.run(
+      "UPDATE debts SET creditor = ?, total = ?, paid = ?, due_date = ?, note = ? WHERE id = ?",
+      [creditor, total, paid, dueDate, note, req.params.id]
+    );
+    const row = await db.get("SELECT * FROM debts WHERE id = ?", [req.params.id]);
+    res.json({ ...row, dueDate: row.due_date });
+  });
+
+  app.delete("/api/debts/:id", async (req, res) => {
+    await db.run("DELETE FROM debts WHERE id = ?", [req.params.id]);
+    res.json({ ok: true, id: req.params.id });
+  });
+
+  app.get("/api/subscriptions", async (_req, res) => {
+    const rows = await db.all("SELECT * FROM subscriptions ORDER BY status, created_at DESC");
+    res.json(rows.map((row) => ({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing })));
+  });
+
+  app.post("/api/subscriptions", async (req, res) => {
+    const { id, kind, icon, name, category, amount, frequency, nextBilling, status, note } = req.body;
+    const nextId = id || Date.now().toString();
+    await db.run(
+      "INSERT INTO subscriptions (id, kind, icon, name, category, amount, frequency, next_billing, status, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [nextId, kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note]
+    );
+    const row = await db.get("SELECT * FROM subscriptions WHERE id = ?", [nextId]);
+    res.json({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing });
+  });
+
+  app.put("/api/subscriptions/:id", async (req, res) => {
+    const { kind, icon, name, category, amount, frequency, nextBilling, status, note } = req.body;
+    await db.run(
+      "UPDATE subscriptions SET kind = ?, icon = ?, name = ?, category = ?, amount = ?, frequency = ?, next_billing = ?, status = ?, note = ? WHERE id = ?",
+      [kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note, req.params.id]
+    );
+    const row = await db.get("SELECT * FROM subscriptions WHERE id = ?", [req.params.id]);
+    res.json({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing });
+  });
+
+  app.delete("/api/subscriptions/:id", async (req, res) => {
+    await db.run("DELETE FROM subscriptions WHERE id = ?", [req.params.id]);
+    res.json({ ok: true, id: req.params.id });
+  });
+
+  app.get("/api/investments/catalog", async (_req, res) => {
+    const marketPricesBySymbol = await getMarketPricesBySymbol();
+    res.json(INVESTMENT_CATALOG.map((asset) => ({
+      ...asset,
+      currentPrice: marketPricesBySymbol[asset.symbol]?.currentPrice ?? null,
+      previousPrice: marketPricesBySymbol[asset.symbol]?.previousClosePrice ?? null,
+      dayChangePct: marketPricesBySymbol[asset.symbol]?.dayChangePct ?? null,
+      lastUpdatedAt: marketPricesBySymbol[asset.symbol]?.updatedAt ?? null,
+    })));
+  });
+
+  app.get("/api/investments", async (_req, res) => {
+    res.json(await getInvestmentsPayload());
+  });
+
+  app.get("/api/investments/trend", async (req, res) => {
+    const range = String(req.query.range || req.query.timeframe || req.query.days || "1M").toUpperCase();
+    try {
+      const trend = await getInvestmentTrend(range);
+      res.json(trend);
+    } catch (error) {
+      console.error("Investment trend failed:", error.message);
+      res.json([]);
+    }
+  });
+
+  app.post("/api/investments/lots", async (req, res) => {
+    const body = req.body || {};
+    const lotId = body.id || `lot-${Date.now()}`;
+    const identity = await resolveInvestmentIdentity(body);
+    const purchaseDate = body.purchaseDate || body.purchase_date || new Date().toISOString().slice(0, 10);
+    const investedAmount = Number(body.investedAmount ?? body.invested_amount);
+    const quantity = Number(body.quantity);
+    const purchasePriceRaw = Number(body.purchasePrice ?? body.purchase_price);
+    const note = body.note || "";
+
+    if (!identity) {
+      return res.status(400).json({ error: "Unsupported asset. Pick one from the catalog or provide a valid providerId." });
+    }
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return res.status(400).json({ error: "Invalid quantity." });
+    }
+
+    if (!Number.isFinite(investedAmount) || investedAmount <= 0) {
+      return res.status(400).json({ error: "Invalid invested amount." });
+    }
+
+    const purchasePrice = Number.isFinite(purchasePriceRaw) && purchasePriceRaw > 0
+      ? purchasePriceRaw
+      : investedAmount / quantity;
+
+    const assetId = await ensureInvestmentAsset(identity);
+    await db.run(
+      "INSERT INTO investment_lots (id, asset_id, purchase_date, invested_amount, purchase_price, quantity, note) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [lotId, assetId, purchaseDate, investedAmount, purchasePrice, quantity, note]
+    );
+
+    triggerQuoteRefresh();
+    const asset = await getInvestmentAssetPayload(assetId);
+    res.json(asset);
+  });
+
+  app.delete("/api/investments/lots/:id", async (req, res) => {
+    const lot = await db.get("SELECT asset_id FROM investment_lots WHERE id = ?", [req.params.id]);
+    if (!lot) {
+      return res.status(404).json({ error: "Investment lot not found." });
+    }
+
+    await db.run("DELETE FROM investment_lots WHERE id = ?", [req.params.id]);
+    const remaining = (await db.get("SELECT COUNT(*) AS count FROM investment_lots WHERE asset_id = ?", [lot.asset_id])).count;
+    if (remaining === 0) {
+      await db.run("DELETE FROM investments_assets WHERE id = ?", [lot.asset_id]);
+    }
+
+    res.json({ ok: true, id: req.params.id });
+  });
+
+  app.listen(PORT, () => {
+    console.log(`FinanceHub API running at http://localhost:${PORT}`);
+    console.log(`Database: ${process.env.TURSO_DATABASE_URL ? "Turso" : "file:local.db"}`);
+    console.log(`Health: http://localhost:${PORT}/api/health`);
+  });
+
+  triggerQuoteRefresh();
+  setInterval(() => {
+    triggerQuoteRefresh();
+  }, INVESTMENT_REFRESH_MS);
+}
+
+start().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});

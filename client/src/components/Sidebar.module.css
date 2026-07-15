@@ -1,11 +1,12 @@
 .sidebar {
-  width: 320px;
+  width: 260px;
   min-height: 100%;
-  background: #f8faf8;
-  border-right: 1px solid #d7dfd7;
-  padding: 22px 18px 18px;
+  background: var(--surface-1);
+  border-right: 1px solid var(--border-subtle);
+  padding: 22px 16px 18px;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .brand {
@@ -16,28 +17,29 @@
 }
 
 .brandMark {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: 14px;
-  background: #2fad68;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-magenta));
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30px;
+  font-size: 26px;
   line-height: 1;
+  font-weight: 800;
 }
 
 .brandName {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 800;
-  color: #101828;
+  color: var(--text-primary);
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   padding: 8px 0 24px;
   flex: 1;
 }
@@ -45,49 +47,50 @@
 .navBtn {
   border: none;
   background: transparent;
-  border-radius: 18px;
-  padding: 16px 18px;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 14px;
-  color: #667085;
-  font-size: 16px;
-  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 600;
   text-align: left;
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease;
 }
 
 .navBtn:hover {
-  background: #eef3ee;
+  background: var(--surface-2);
+  color: var(--text-secondary);
 }
 
 .active {
-  background: #deefe4;
-  color: #23a36b;
+  background: var(--surface-2);
+  color: var(--accent-teal);
 }
 
 .navIcon {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   flex: 0 0 auto;
 }
 
 .userCard {
   margin-top: auto;
-  border-top: 1px solid #d7dfd7;
-  padding: 22px 12px 4px;
+  border-top: 1px solid var(--border-subtle);
+  padding: 20px 10px 4px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .avatar {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
-  background: #d8f0de;
-  color: #2b8c59;
+  background: var(--surface-3);
+  color: var(--accent-teal);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -100,17 +103,17 @@
 }
 
 .userName {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  color: #101828;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .userEmail {
-  font-size: 13px;
-  color: #667085;
+  font-size: 12px;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -119,20 +122,65 @@
 .logoutBtn {
   border: none;
   background: transparent;
-  color: #344054;
-  font-size: 22px;
+  color: var(--text-muted);
+  font-size: 20px;
   cursor: pointer;
 }
 
-@media (max-width: 1100px) {
+/* mobile: collapse rail into a fixed bottom tab bar, like a native app */
+@media (max-width: 900px) {
   .sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
     min-height: auto;
     border-right: none;
-    border-bottom: 1px solid #d7dfd7;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: 0;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    z-index: 100;
   }
 
+  .brand,
   .userCard {
-    margin-top: 0;
+    display: none;
+  }
+
+  .nav {
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0;
+    gap: 2px;
+  }
+
+  .navBtn {
+    flex-direction: column;
+    gap: 4px;
+    padding: 7px 2px;
+    font-size: 9.5px;
+    text-align: center;
+    flex: 1;
+    min-width: 0;
+    border-radius: var(--radius-sm);
+  }
+
+  .navBtn span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .navIcon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .navBtn {
+    font-size: 8.5px;
   }
 }

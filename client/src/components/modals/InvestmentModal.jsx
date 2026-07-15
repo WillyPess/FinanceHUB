@@ -107,7 +107,7 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
         {selectedAsset && (
           <div
             style={{
-              border: "1px solid #dbe3ea",
+              border: "1px solid var(--border-subtle)",
               borderRadius: 10,
               padding: "12px 14px",
               display: "flex",
@@ -115,7 +115,7 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
               justifyContent: "space-between",
               gap: 12,
               marginBottom: 16,
-              background: "#fbfdff",
+              background: "var(--panel-bg)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -123,25 +123,26 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
                 style={{
                   minWidth: 48,
                   height: 28,
-                  border: "1px solid #1f2937",
+                  border: "1px solid var(--border-strong)",
                   borderRadius: 6,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 800,
                   fontSize: 13,
-                  background: "#fff",
+                  background: "var(--surface-3)",
+                  color: "var(--text-primary)",
                 }}
               >
                 {selectedAsset.symbol}
               </span>
-              <div style={{ fontSize: 14, color: "#0f172a", fontWeight: 600 }}>
+              <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600 }}>
                 {selectedAsset.name} ({selectedAsset.symbol} / USD)
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {selectedAsset.currentPrice != null && (
-                <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>
                   {fmtUsdFromAud(selectedAsset.currentPrice)}
                 </div>
               )}
@@ -150,8 +151,8 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
                   style={{
                     padding: "6px 10px",
                     borderRadius: 10,
-                    background: selectedAsset.dayChangePct >= 0 ? "#ecfdf3" : "#fef2f2",
-                    color: selectedAsset.dayChangePct >= 0 ? "#16a34a" : "#dc2626",
+                    background: selectedAsset.dayChangePct >= 0 ? "rgba(31,191,143,0.14)" : "rgba(239,91,91,0.14)",
+                    color: selectedAsset.dayChangePct >= 0 ? "var(--positive)" : "var(--negative)",
                     fontWeight: 700,
                     fontSize: 13,
                   }}
@@ -183,7 +184,7 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
                 setStep("select");
                 resetForm();
               }}
-              style={{ height: 40, border: "none", background: "transparent", color: "#64748b", cursor: "pointer", fontSize: 18 }}
+              style={{ height: 40, border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", fontSize: 18 }}
               title="Change asset"
             >
               ↺
@@ -197,7 +198,7 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
           <button
             type="button"
             onClick={() => resetForm()}
-            style={{ border: "none", background: "transparent", color: "#2563eb", fontWeight: 700, cursor: "pointer", fontSize: 14 }}
+            style={{ border: "none", background: "transparent", color: "var(--accent-blue)", fontWeight: 700, cursor: "pointer", fontSize: 14 }}
           >
             + More purchases of {selectedAsset?.symbol || "this asset"}
           </button>
@@ -212,21 +213,21 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
           <button
             type="button"
             onClick={onClose}
-            style={{ padding: "12px 20px", border: "none", background: "transparent", color: "#2563eb", fontWeight: 700, cursor: "pointer" }}
+            style={{ padding: "12px 20px", border: "none", background: "transparent", color: "var(--accent-blue)", fontWeight: 700, cursor: "pointer" }}
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => save({ keepOpen: true })}
-            style={{ padding: "12px 18px", border: "none", borderRadius: 10, background: "#2563eb", color: "#fff", fontWeight: 700, cursor: "pointer" }}
+            style={{ padding: "12px 18px", border: "none", borderRadius: 10, background: "var(--accent-blue)", color: "#fff", fontWeight: 700, cursor: "pointer" }}
           >
             Save and add another
           </button>
           <button
             type="button"
             onClick={() => save({ keepOpen: false })}
-            style={{ padding: "12px 18px", border: "none", borderRadius: 10, background: "#2563eb", color: "#fff", fontWeight: 700, cursor: "pointer" }}
+            style={{ padding: "12px 18px", border: "none", borderRadius: 10, background: "var(--accent-blue)", color: "#fff", fontWeight: 700, cursor: "pointer" }}
           >
             Save
           </button>

@@ -166,7 +166,6 @@ export function useFinanceData() {
       investmentRange,
       investmentCatalog,
       apiHealth,
-      user: { name: "Willy Pessoa", email: "willypessoa12@gmail.com" },
     },
     loading,
     error,

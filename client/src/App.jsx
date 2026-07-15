@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useFinanceData } from "./hooks/useFinanceData.js";
+import { useAuth } from "./context/AuthContext.jsx";
 import { getDisplayCurrency, getDisplayCurrencyOptions, setDisplayCurrency as setDisplayCurrencyPreference } from "./utils/formatters.js";
 import Sidebar from "./components/Sidebar.jsx";
 import Dashboard from "./components/Dashboard.jsx";
@@ -13,6 +14,10 @@ import SubModal from "./components/modals/SubModal.jsx";
 import InvestmentModal from "./components/modals/InvestmentModal.jsx";
 
 export default function App() {
+  const { user, logout } = useAuth();
+  const displayName = user?.email ? user.email.split("@")[0].replace(/^\w/, (c) => c.toUpperCase()) : "Account";
+  const displayUser = { name: displayName, email: user?.email || "" };
+
   const {
     data,
     loading,
@@ -107,20 +112,20 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 12 }}>
-        <div style={{ fontSize: 32 }}>$</div>
-        <div style={{ color: "#64748b", fontSize: 14 }}>Loading FinanceHub...</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 12, background: "var(--panel-bg)" }}>
+        <div style={{ fontSize: 32, color: "var(--text-primary)" }}>$</div>
+        <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading FinanceHub...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 16, padding: 32 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 16, padding: 32, background: "var(--panel-bg)" }}>
         <div style={{ fontSize: 40 }}>!</div>
-        <div style={{ fontWeight: 700, fontSize: 18, color: "#0f172a" }}>Cannot connect to server</div>
-        <div style={{ color: "#64748b", fontSize: 14, textAlign: "center", maxWidth: 400 }}>{error}</div>
-        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "16px 20px", fontSize: 13, color: "#374151", fontFamily: "monospace" }}>
+        <div style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)" }}>Cannot connect to server</div>
+        <div style={{ color: "var(--text-muted)", fontSize: 14, textAlign: "center", maxWidth: 400 }}>{error}</div>
+        <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: 10, padding: "16px 20px", fontSize: 13, color: "var(--text-secondary)", fontFamily: "monospace" }}>
           Make sure you ran: <b>npm run dev</b> from the project root
         </div>
       </div>
@@ -128,41 +133,71 @@ export default function App() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", padding: "18px", background: "#edf1ed" }}>
-      <div style={{ display: "flex", minHeight: "calc(100vh - 36px)", background: "#f7f9f7", border: "1px solid #d7dfd7", borderRadius: "24px", overflow: "hidden", boxShadow: "0 8px 24px rgba(16,24,40,0.05)" }}>
-        <Sidebar page={page} setPage={setPage} user={data.user} />
-        <main style={{ flex: 1, overflowY: "auto", background: "#fcfdfc" }}>
+    <div style={{ minHeight: "100vh", background: "var(--panel-bg)" }}>
+      <div style={{ display: "flex", minHeight: "100vh", background: "var(--panel-bg)" }}>
+        <Sidebar page={page} setPage={setPage} user={displayUser} onLogout={logout} />
+        <main className="app-main" style={{ flex: 1, minWidth: 0, overflowY: "auto", overflowX: "hidden", background: "var(--panel-bg)" }}>
           <div
+            className="app-header"
             style={{
               display: "flex",
-              justifyContent: "flex-end",
+              justifyContent: "space-between",
               alignItems: "center",
-              gap: 10,
-              padding: "18px 24px 0",
+              gap: 14,
+              flexWrap: "wrap",
             }}
           >
-            <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "#64748b", textTransform: "uppercase" }}>
-              Display Currency
-            </label>
-            <select
-              value={displayCurrency}
-              onChange={handleDisplayCurrencyChange}
-              style={{
-                border: "1px solid #d7dfd7",
-                borderRadius: 10,
-                padding: "10px 12px",
-                background: "#fff",
-                color: "#0f172a",
-                fontWeight: 700,
-                fontFamily: "inherit",
-              }}
-            >
-              {getDisplayCurrencyOptions().map((currencyCode) => (
-                <option key={currencyCode} value={currencyCode}>
-                  {currencyCode}
-                </option>
-              ))}
-            </select>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, var(--accent-blue), var(--accent-magenta))",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  flexShrink: 0,
+                }}
+              >
+                {displayUser.name[0]}
+              </div>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)" }}>
+                  Welcome back, {displayUser.name}!
+                </div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>
+                  Here's your financial overview
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                Currency
+              </label>
+              <select
+                value={displayCurrency}
+                onChange={handleDisplayCurrencyChange}
+                style={{
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  background: "var(--surface-2)",
+                  color: "var(--text-primary)",
+                  fontWeight: 700,
+                  fontFamily: "inherit",
+                }}
+              >
+                {getDisplayCurrencyOptions().map((currencyCode) => (
+                  <option key={currencyCode} value={currencyCode}>
+                    {currencyCode}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           {page === "dashboard" && (
             <Dashboard
@@ -170,6 +205,9 @@ export default function App() {
               onEditTx={openEditTx}
               onDeleteTx={handleDeleteTransaction}
               onChangeInvestmentRange={setInvestmentRange}
+              onGoToBills={() => setPage("fixed-costs")}
+              onGoToInvestments={() => setPage("investments")}
+              onGoToDebts={() => setPage("debts")}
             />
           )}
           {page === "transactions" && (
@@ -231,10 +269,10 @@ export default function App() {
             gap: 10,
             padding: "12px 16px",
             borderRadius: 14,
-            border: `1px solid ${saveNotice.type === "success" ? "#b7ebc6" : "#f3c1c1"}`,
-            background: saveNotice.type === "success" ? "#edf9f0" : "#fff1f1",
-            color: saveNotice.type === "success" ? "#166534" : "#b42318",
-            boxShadow: "0 10px 24px rgba(16,24,40,0.12)",
+            border: `1px solid ${saveNotice.type === "success" ? "rgba(31,191,143,0.35)" : "rgba(239,91,91,0.4)"}`,
+            background: "var(--surface-2)",
+            color: saveNotice.type === "success" ? "var(--positive)" : "var(--negative)",
+            boxShadow: "var(--shadow-card)",
             fontSize: 14,
             fontWeight: 700,
           }}

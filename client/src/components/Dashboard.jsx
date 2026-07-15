@@ -1,18 +1,22 @@
 import { useMemo } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { fmt, fmtCompactCurrency, fmtDate } from "../utils/formatters.js";
+import { fmt, fmtDate, fmtSignedPercent } from "../utils/formatters.js";
 import { CAT_COLORS, CAT_ICONS, resolveIconGlyph } from "../constants.js";
 import styles from "./Dashboard.module.css";
 
 const INVESTMENT_TIMEFRAMES = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y", "MAX"];
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-export default function Dashboard({ data, onEditTx, onDeleteTx, onChangeInvestmentRange }) {
+export default function Dashboard({ data, onEditTx, onDeleteTx, onChangeInvestmentRange, onGoToBills, onGoToInvestments, onGoToDebts }) {
   const { transactions, debts, subscriptions, investments, investmentTrend, investmentRange } = data;
   const now = new Date();
+  const monthName = now.toLocaleDateString("en-US", { month: "long" });
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
   const balance = totalIncome - totalExpense;
+  const totalDebtOwed = debts.reduce((sum, debt) => sum + (Number(debt.total) || 0), 0);
   const pendingDebts = debts.reduce((sum, debt) => sum + Math.max(debt.total - debt.paid, 0), 0);
+  const debtsPaid = Math.max(totalDebtOwed - pendingDebts, 0);
   const netDebtImpact = debts.reduce((sum, debt) => {
     const remaining = Math.max((Number(debt.total) || 0) - (Number(debt.paid) || 0), 0);
     return sum + (inferDebtDirection(debt) === "owed" ? remaining : -remaining);
@@ -77,9 +81,25 @@ export default function Dashboard({ data, onEditTx, onDeleteTx, onChangeInvestme
         name,
         value,
         pct: totalExpense > 0 ? Math.round((value / totalExpense) * 100) : 0,
-        color: CAT_COLORS[name] || "#98a2b3",
+        color: CAT_COLORS[name] || CAT_COLORS.Other,
       }));
   }, [transactions, totalExpense]);
+
+  const upcomingBills = useMemo(() => {
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() + 30);
+    return subscriptions
+      .filter((item) => item.status === "active" && item.nextBilling)
+      .filter((item) => {
+        const due = new Date(`${item.nextBilling}T00:00:00`);
+        return due >= new Date(now.getFullYear(), now.getMonth(), now.getDate()) && due <= cutoff;
+      })
+      .sort((a, b) => new Date(a.nextBilling) - new Date(b.nextBilling))
+      .slice(0, 5);
+  }, [subscriptions, now]);
+  const upcomingBillsTotal = upcomingBills.reduce((sum, item) => sum + item.amount, 0);
+
+  const cashflowMax = Math.max(totalIncome, totalExpense, 1);
 
   return (
     <div className={styles.page}>
@@ -89,129 +109,159 @@ export default function Dashboard({ data, onEditTx, onDeleteTx, onChangeInvestme
           <p className={styles.subtitle}>Your financial overview</p>
         </div>
         <button type="button" className={styles.exportBtn}>
-          <span className={styles.exportIcon}>v</span>
+          <span className={styles.exportIcon}>&darr;</span>
           Export
         </button>
       </div>
 
       <div className={styles.statsGrid}>
-        <StatCard label="BALANCE" value={fmt(balance)} accent="blue" icon="Net" />
-        <StatCard label="FIXED / MONTH" value={fmt(fixedMonthly)} accent="gold" icon="Fix" />
-        <StatCard label="PENDING DEBTS" value={fmt(pendingDebts)} accent="gold" icon="Debt" />
-        <StatCard label="INVESTMENTS" value={fmt(investmentSummary.portfolioValue || investmentSummary.currentValue || 0)} accent="green" icon="Inv" />
+        <StatCard label="BALANCE" value={fmt(balance)} accent="blue" icon="◆" />
+        <StatCard label="FIXED / MONTH" value={fmt(fixedMonthly)} accent="gold" icon="▤" />
+        <StatCard label="PENDING DEBTS" value={fmt(pendingDebts)} accent="magenta" icon="●" onClick={onGoToDebts} />
+        <StatCard label="INVESTMENTS" value={fmt(investmentSummary.portfolioValue || investmentSummary.currentValue || 0)} accent="teal" icon="▲" onClick={onGoToInvestments} />
       </div>
 
-      <div className={styles.chartGrid}>
-        <section className={`${styles.card} ${styles.trendCard}`}>
-          <div className={styles.trendHeader}>
-            <div>
-              <h2 className={styles.cardTitle}>Total Trend</h2>
-              <div className={styles.trendValueRow}>
-                <span className={styles.trendValue}>{fmt(totalToday)}</span>
-                <span className={trendDelta >= 0 ? styles.trendUp : styles.trendDown}>
-                  {trendDelta >= 0 ? "+" : "-"} {formatPct(Math.abs(trendDeltaPct))}
-                </span>
-                <span className={trendDelta >= 0 ? styles.trendGain : styles.trendLoss}>
-                  {trendDelta >= 0 ? "+" : "-"}
-                  {fmt(Math.abs(trendDelta))} {investmentRange || "1M"}
-                </span>
-              </div>
-              <div className={styles.trendSummaryRow}>
-                <SummaryChip label="Total Today" value={fmt(totalToday)} tone="neutral" />
-                <SummaryChip label="Remaining This Month" value={fmt(remainingCommittedThisMonth)} tone="warning" />
-                <SummaryChip label="Projected End Of Month" value={fmt(projectedEndOfMonth)} tone={projectedEndOfMonth >= 0 ? "positive" : "negative"} />
-              </div>
-              <div className={styles.trendCaption}>
-                Total today = transactions + investments +/- debts
-                <span className={styles.captionDivider}>|</span>
-                Monthly commitments {fmt(fixedMonthly)}
-                <span className={styles.captionDivider}>|</span>
-                {investmentSummary.marketStatus?.message || "Price cache refresh every 45s"}
-              </div>
+      <div className={styles.tripleGrid}>
+        <section className={styles.card}>
+          <h2 className={styles.cardTitle}>My Spending for {monthName}</h2>
+          <div className={styles.donutCenterWrap}>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={categoryData} innerRadius={64} outerRadius={94} paddingAngle={3} dataKey="value" stroke="none">
+                  {categoryData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className={styles.donutCenter}>
+              <span className={styles.donutCenterValue}>{fmt(totalExpense)}</span>
+              <span className={styles.donutCenterLabel}>Spent this month</span>
             </div>
           </div>
-
-          <div className={styles.timeframeRow}>
-            {INVESTMENT_TIMEFRAMES.map((range) => (
-              <button
-                key={range}
-                type="button"
-                className={range === investmentRange ? styles.timeframeActive : styles.timeframeBtn}
-                onClick={() => onChangeInvestmentRange?.(range)}
-              >
-                {range}
-              </button>
+          <div className={styles.categoryList}>
+            {categoryData.slice(0, 6).map((item) => (
+              <div key={item.name} className={styles.categoryRow}>
+                <div className={styles.categoryName}>
+                  <span className={styles.categoryDot} style={{ background: item.color }} />
+                  {item.name}
+                </div>
+                <span className={styles.categoryAmt}>
+                  {fmt(item.value)} <span className={styles.categoryPct}>{item.pct}%</span>
+                </span>
+              </div>
             ))}
-          </div>
-
-          <div className={styles.chartWrap}>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={trendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="investmentTrendFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#667085", fontSize: 13 }} minTickGap={18} />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#667085", fontSize: 13 }}
-                  width={72}
-                  tickFormatter={(value) => fmtCompactCurrency(value)}
-                />
-                <Tooltip
-                  formatter={(value) => fmt(value)}
-                  labelFormatter={(_label, payload) => formatTooltipDate(payload?.[0]?.payload?.date)}
-                  contentStyle={{ borderRadius: 14, border: "1px solid #d0d5dd" }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  fill="url(#investmentTrendFill)"
-                  dot={false}
-                  activeDot={{ r: 5, strokeWidth: 0, fill: "#3b82f6" }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className={styles.legend}>
-            <LegendDot color="#3b82f6" label="Total portfolio value" />
+            {!categoryData.length && <div className={styles.emptyState}>No expense data yet.</div>}
           </div>
         </section>
 
         <section className={styles.card}>
-          <h2 className={styles.cardTitle}>Spending by Category</h2>
-          <div className={styles.categoryLayout}>
-            <div className={styles.donutWrap}>
-              <ResponsiveContainer width="100%" height={240}>
-                <PieChart>
-                  <Pie data={categoryData} innerRadius={60} outerRadius={88} paddingAngle={2} dataKey="value">
-                    {categoryData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className={styles.categoryList}>
-              {categoryData.map((item) => (
-                <div key={item.name} className={styles.categoryRow}>
-                  <div className={styles.categoryName}>
-                    <span className={styles.categoryDot} style={{ background: item.color }} />
-                    {item.name}
+          <h2 className={styles.cardTitle}>My Cashflow for {monthName}</h2>
+          <CashflowBar label="EARNED" value={totalIncome} max={cashflowMax} tone="teal" />
+          <CashflowBar label="SPENT" value={totalExpense} max={cashflowMax} tone="magenta" />
+          <div className={styles.balanceRow}>
+            <span className={balance >= 0 ? styles.balancePositive : styles.balanceNegative}>{fmt(balance)}</span>
+            <span className={styles.balanceLabel}>{balance >= 0 ? "REMAINING" : "OVER BUDGET"}</span>
+          </div>
+
+          <div className={styles.divider} />
+
+          <div className={styles.billsHeaderRow}>
+            <h3 className={styles.subCardTitle}>Upcoming Bills</h3>
+            <button type="button" className={styles.linkBtn} onClick={onGoToBills}>View all</button>
+          </div>
+          <div className={styles.billsMeta}>Due in the next 30 days &middot; {fmt(upcomingBillsTotal)}</div>
+          <div className={styles.billsList}>
+            {upcomingBills.map((item) => {
+              const daysLeft = Math.ceil((new Date(`${item.nextBilling}T00:00:00`) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / MS_PER_DAY);
+              return (
+                <div key={item.id} className={styles.billRow}>
+                  <div className={styles.billInfo}>
+                    <span className={styles.billDate}>{daysLeft <= 0 ? "Today" : fmtDate(item.nextBilling)}</span>
+                    <span className={styles.billName}>{item.name}</span>
                   </div>
-                  <span className={styles.categoryPct}>{item.pct}%</span>
+                  <div className={styles.billRight}>
+                    <span className={styles.billAmt}>{fmt(item.amount)}</span>
+                    <button type="button" className={styles.pillBtn} onClick={onGoToBills}>View</button>
+                  </div>
                 </div>
-              ))}
-              {!categoryData.length && <div className={styles.emptyState}>No expense data yet.</div>}
-            </div>
+              );
+            })}
+            {!upcomingBills.length && <div className={styles.emptyState}>No bills due soon.</div>}
           </div>
         </section>
+
+        <div className={styles.stackCol}>
+          <section className={`${styles.card} ${styles.trendCard}`}>
+            <div className={styles.trendHeader}>
+              <h2 className={styles.cardTitle}>Total Trend</h2>
+              <span className={trendDelta >= 0 ? styles.trendUp : styles.trendDown}>
+                {trendDelta >= 0 ? "+" : "-"}{formatPct(Math.abs(trendDeltaPct))}
+              </span>
+            </div>
+            <div className={styles.trendValue}>{fmt(totalToday)}</div>
+
+            <div className={styles.timeframeRow}>
+              {INVESTMENT_TIMEFRAMES.map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  className={range === investmentRange ? styles.timeframeActive : styles.timeframeBtn}
+                  onClick={() => onChangeInvestmentRange?.(range)}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.chartWrap}>
+              <ResponsiveContainer width="100%" height={160}>
+                <AreaChart data={trendData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="investmentTrendFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent-blue)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="var(--accent-blue)" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#7d83b8", fontSize: 11 }} minTickGap={24} />
+                  <YAxis hide />
+                  <Tooltip
+                    formatter={(value) => fmt(value)}
+                    labelFormatter={(_label, payload) => formatTooltipDate(payload?.[0]?.payload?.date)}
+                    contentStyle={{ borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", background: "#1d2247", color: "#fff" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="var(--accent-blue)"
+                    strokeWidth={2.5}
+                    fill="url(#investmentTrendFill)"
+                    dot={false}
+                    activeDot={{ r: 4, strokeWidth: 0, fill: "var(--accent-blue)" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+
+          <section className={`${styles.card} ${styles.miniCard}`} onClick={onGoToInvestments} role="button" tabIndex={0}>
+            <div className={styles.miniHeader}>
+              <span className={styles.subCardTitle}>Invest in My Future</span>
+            </div>
+            <div className={styles.miniValue}>{fmt(investmentSummary.portfolioValue || investmentSummary.currentValue || 0)}</div>
+            <div className={(investmentSummary.totalGain || 0) >= 0 ? styles.miniPositive : styles.miniNegative}>
+              {fmtSignedPercent(investmentSummary.totalGainPct || 0)} all-time
+            </div>
+          </section>
+
+          <section className={`${styles.card} ${styles.miniCard}`} onClick={onGoToDebts} role="button" tabIndex={0}>
+            <div className={styles.miniHeader}>
+              <span className={styles.subCardTitle}>Paying Off Loans</span>
+            </div>
+            <div className={styles.miniValue}>{fmt(debtsPaid)}</div>
+            <div className={styles.miniMuted}>paid toward debts &middot; you still owe {fmt(pendingDebts)}</div>
+          </section>
+        </div>
       </div>
 
       <section className={styles.card}>
@@ -241,6 +291,7 @@ export default function Dashboard({ data, onEditTx, onDeleteTx, onChangeInvestme
               </div>
             </div>
           ))}
+          {!transactions.length && <div className={styles.emptyState}>No transactions yet.</div>}
         </div>
       </section>
     </div>
@@ -261,32 +312,29 @@ function inferDebtDirection(debt) {
   return "i-owe";
 }
 
-function StatCard({ label, value, accent, icon }) {
+function StatCard({ label, value, accent, icon, onClick }) {
   return (
-    <div className={`${styles.statCard} ${styles[accent]}`}>
-      <div>
-        <div className={styles.statLabel}>{label}</div>
-        <div className={styles.statValue}>{value}</div>
+    <div className={`${styles.statCard} ${styles[accent]}`} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}>
+      <div className={styles.statTop}>
+        <span className={styles.statLabel}>{label}</span>
+        <span className={styles.statIcon}>{icon}</span>
       </div>
-      <div className={styles.statIcon}>{icon}</div>
+      <div className={styles.statValue}>{value}</div>
     </div>
   );
 }
 
-function LegendDot({ color, label }) {
+function CashflowBar({ label, value, max, tone }) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
-    <div className={styles.legendItem}>
-      <span className={styles.legendDot} style={{ background: color }} />
-      {label}
-    </div>
-  );
-}
-
-function SummaryChip({ label, value, tone }) {
-  return (
-    <div className={`${styles.summaryChip} ${styles[tone] || ""}`}>
-      <span className={styles.summaryChipLabel}>{label}</span>
-      <span className={styles.summaryChipValue}>{value}</span>
+    <div className={styles.cashflowRow}>
+      <div className={styles.cashflowLabelRow}>
+        <span className={styles.cashflowLabel}>{label}</span>
+        <span className={styles.cashflowValue}>{fmt(value)}</span>
+      </div>
+      <div className={styles.cashflowTrack}>
+        <div className={`${styles.cashflowFill} ${styles[tone]}`} style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }

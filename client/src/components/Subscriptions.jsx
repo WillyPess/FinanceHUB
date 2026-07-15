@@ -4,7 +4,7 @@ import { resolveIconGlyph } from "../constants.js";
 import styles from "./Subscriptions.module.css";
 
 const FREQ_MONTHS = { weekly: 1 / 4.33, monthly: 1, yearly: 12 };
-const STATUS_COLOR = { active: "#22c55e", paused: "#f59e0b", cancelled: "#ef4444" };
+const STATUS_COLOR = { active: "var(--accent-teal)", paused: "var(--accent-gold)", cancelled: "var(--negative)" };
 const STATUS_LABEL = { active: "Active", paused: "Paused", cancelled: "Cancelled" };
 
 export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }) {
@@ -46,10 +46,10 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
       </div>
 
       <div className={styles.summaryGrid}>
-        <SummaryCard label="Monthly Fixed" value={fmt(monthlyTotal)} hint="All" color="#3b82f6" bg="#eff6ff" />
-        <SummaryCard label="Bills / Month" value={fmt(monthlyBills)} hint="Bills" color="#8b5cf6" bg="#f5f3ff" />
-        <SummaryCard label="Subscriptions" value={subscriptionsOnly.length} hint="Subs" color="#22c55e" bg="#f0fdf4" />
-        <SummaryCard label="Bills" value={billsOnly.length} hint="Acct" color="#f59e0b" bg="#fffbeb" />
+        <SummaryCard label="Monthly Fixed" value={fmt(monthlyTotal)} hint="All" color="var(--accent-blue)" />
+        <SummaryCard label="Bills / Month" value={fmt(monthlyBills)} hint="Bills" color="var(--accent-magenta)" />
+        <SummaryCard label="Subscriptions" value={subscriptionsOnly.length} hint="Subs" color="var(--accent-teal)" />
+        <SummaryCard label="Bills" value={billsOnly.length} hint="Acct" color="var(--accent-gold)" />
       </div>
 
       <div className={styles.bodyGrid}>
@@ -100,7 +100,10 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
                     {daysLeft !== null && (
                       <div
                         className={styles.daysTag}
-                        style={{ background: urgent ? "#fef2f2" : "#f1f5f9", color: urgent ? "#ef4444" : "#64748b" }}
+                        style={{
+                          background: urgent ? "rgba(239,91,91,0.16)" : "var(--surface-3)",
+                          color: urgent ? "var(--negative)" : "var(--text-muted)",
+                        }}
                       >
                         {daysLeft <= 0 ? "Today" : `${daysLeft}d`}
                       </div>
@@ -121,11 +124,11 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
                 return (
                   <div key={item.id} style={{ marginBottom: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4, gap: 8 }}>
-                      <span style={{ color: "#374151" }}>{item.icon} {item.name} | {item.kind === "bill" ? "Bill" : "Subscription"}</span>
-                      <span style={{ color: "#94a3b8" }}>{fmt(monthly)}/mo ({pct.toFixed(0)}%)</span>
+                      <span style={{ color: "var(--text-secondary)" }}>{item.icon} {item.name} | {item.kind === "bill" ? "Bill" : "Subscription"}</span>
+                      <span style={{ color: "var(--text-muted)" }}>{fmt(monthly)}/mo ({pct.toFixed(0)}%)</span>
                     </div>
-                    <div style={{ height: 6, background: "#f1f5f9", borderRadius: 3 }}>
-                      <div style={{ height: "100%", width: `${pct}%`, background: "#3b82f6", borderRadius: 3, transition: "width 0.5s" }} />
+                    <div style={{ height: 6, background: "var(--surface-3)", borderRadius: 3 }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent-blue)", borderRadius: 3, transition: "width 0.5s" }} />
                     </div>
                   </div>
                 );
@@ -148,25 +151,25 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
   );
 }
 
-function SummaryCard({ label, value, hint, color, bg }) {
+function SummaryCard({ label, value, hint, color }) {
   return (
-    <div style={{ background: bg, borderRadius: 14, padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#94a3b8" }}>{label.toUpperCase()}</div>
-        <div style={{ minWidth: 36, height: 32, padding: "0 8px", background: "#fff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 20, minWidth: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "var(--text-muted)" }}>{label.toUpperCase()}</div>
+        <div style={{ minWidth: 36, height: 32, padding: "0 8px", background: "var(--surface-3)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", flexShrink: 0 }}>
           {hint}
         </div>
       </div>
-      <div style={{ fontSize: 24, fontWeight: 800, color }}>{value}</div>
+      <div style={{ fontSize: "clamp(18px, 4vw, 24px)", fontWeight: 800, color, overflowWrap: "anywhere" }}>{value}</div>
     </div>
   );
 }
 
 function OverviewRow({ label, value }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #eef1ee", paddingBottom: 10 }}>
-      <span style={{ color: "#667085", fontSize: 14 }}>{label}</span>
-      <strong style={{ color: "#101828" }}>{value}</strong>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-subtle)", paddingBottom: 10 }}>
+      <span style={{ color: "var(--text-muted)", fontSize: 14 }}>{label}</span>
+      <strong style={{ color: "var(--text-primary)" }}>{value}</strong>
     </div>
   );
 }
@@ -176,22 +179,26 @@ function SubRow({ sub, onEdit, onDelete }) {
 
   return (
     <div className={styles.subRow}>
-      <span className={styles.subIcon}>{resolveIconGlyph(sub.icon || "package")}</span>
-      <div className={styles.subInfo}>
-        <div className={styles.subName}>{sub.name}</div>
-        <div className={styles.subMeta}>
-          <span className={styles.badge}>{sub.kind === "bill" ? "Bill" : "Subscription"}</span>
-          <span className={styles.badge}>{sub.category}</span>
-          <span className={styles.freqTag}>{sub.frequency ? `${sub.frequency[0].toUpperCase()}${sub.frequency.slice(1)}` : ""}</span>
-          {nextBilling && <span className={styles.nextDate}>Due: {fmtDate(nextBilling)}</span>}
+      <div className={styles.subMain}>
+        <span className={styles.subIcon}>{resolveIconGlyph(sub.icon || "package")}</span>
+        <div className={styles.subInfo}>
+          <div className={styles.subName}>{sub.name}</div>
+          <div className={styles.subMeta}>
+            <span className={styles.badge}>{sub.kind === "bill" ? "Bill" : "Subscription"}</span>
+            <span className={styles.badge}>{sub.category}</span>
+            <span className={styles.freqTag}>{sub.frequency ? `${sub.frequency[0].toUpperCase()}${sub.frequency.slice(1)}` : ""}</span>
+            {nextBilling && <span className={styles.nextDate}>Due: {fmtDate(nextBilling)}</span>}
+          </div>
         </div>
       </div>
-      <div className={styles.subAmount}>
-        <div className={styles.subAmtVal}>{fmt(sub.amount)}</div>
-        <div className={styles.subAmtPer}>/{sub.frequency === "yearly" ? "yr" : sub.frequency === "weekly" ? "wk" : "mo"}</div>
+      <div className={styles.subEnd}>
+        <div className={styles.subAmount}>
+          <div className={styles.subAmtVal}>{fmt(sub.amount)}</div>
+          <div className={styles.subAmtPer}>/{sub.frequency === "yearly" ? "yr" : sub.frequency === "weekly" ? "wk" : "mo"}</div>
+        </div>
+        <button onClick={() => onEdit(sub)} className={styles.iconBtn}>Edit</button>
+        <button onClick={() => onDelete(sub.id)} className={styles.iconBtn}>Del</button>
       </div>
-      <button onClick={() => onEdit(sub)} className={styles.iconBtn}>Edit</button>
-      <button onClick={() => onDelete(sub.id)} className={styles.iconBtn}>Del</button>
     </div>
   );
 }

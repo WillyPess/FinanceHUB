@@ -14,19 +14,21 @@ export const CAT_ICONS = {
   Other: "package",
 };
 
+// Dark-surface categorical palette — CVD-checked (validate_palette.js, --mode dark).
+// Fixed hue-to-category mapping so color always follows category identity, never sort rank.
 export const CAT_COLORS = {
-  Housing: "#22c55e",
-  Food: "#3b82f6",
-  Shopping: "#f59e0b",
-  Entertainment: "#a855f7",
-  Transport: "#ef4444",
-  Utilities: "#10b981",
-  Health: "#06b6d4",
-  Subscriptions: "#f97316",
-  Salary: "#22c55e",
-  Freelance: "#3b82f6",
-  Investment: "#6366f1",
-  Other: "#94a3b8",
+  Housing: "#3987e5",
+  Food: "#199e70",
+  Shopping: "#c98500",
+  Utilities: "#008300",
+  Entertainment: "#9085e9",
+  Transport: "#e66767",
+  Health: "#d55181",
+  Subscriptions: "#d95926",
+  Salary: "#199e70",
+  Freelance: "#3987e5",
+  Investment: "#9085e9",
+  Other: "#7d83b8",
 };
 
 export const TX_CATS = Object.keys(CAT_ICONS);

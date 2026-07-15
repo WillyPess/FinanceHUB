@@ -41,10 +41,10 @@ export default function SubModal({ initial, onSave, onClose }) {
                 style={{
                   flex: 1,
                   padding: "10px 8px",
-                  border: `2px solid ${f.kind === value ? "#23a36b" : "#e2e8f0"}`,
+                  border: `2px solid ${f.kind === value ? "var(--accent-teal)" : "var(--border-subtle)"}`,
                   borderRadius: 10,
-                  background: f.kind === value ? "#eefbf4" : "#fff",
-                  color: f.kind === value ? "#167c52" : "#667085",
+                  background: f.kind === value ? "rgba(31,191,143,0.14)" : "var(--panel-bg)",
+                  color: f.kind === value ? "var(--accent-teal)" : "var(--text-muted)",
                   fontWeight: 700,
                   cursor: "pointer",
                   fontFamily: "inherit",
@@ -119,9 +119,9 @@ export default function SubModal({ initial, onSave, onClose }) {
           <label className={s.label}>Status</label>
           <div style={{ display: "flex", gap: 8 }}>
             {[
-              ["active", "Active", "#f0fdf4", "#22c55e"],
-              ["paused", "Paused", "#fffbeb", "#f59e0b"],
-              ["cancelled", "Cancelled", "#fef2f2", "#ef4444"],
+              ["active", "Active", "rgba(31,191,143,0.14)", "var(--accent-teal)"],
+              ["paused", "Paused", "rgba(201,130,15,0.16)", "var(--accent-gold)"],
+              ["cancelled", "Cancelled", "rgba(239,91,91,0.14)", "var(--negative)"],
             ].map(([value, label, bg, color]) => (
               <button
                 key={value}
@@ -130,10 +130,10 @@ export default function SubModal({ initial, onSave, onClose }) {
                 style={{
                   flex: 1,
                   padding: "8px 4px",
-                  border: `2px solid ${f.status === value ? color : "#e2e8f0"}`,
+                  border: `2px solid ${f.status === value ? color : "var(--border-subtle)"}`,
                   borderRadius: 8,
-                  background: f.status === value ? bg : "#fff",
-                  color: f.status === value ? color : "#94a3b8",
+                  background: f.status === value ? bg : "var(--panel-bg)",
+                  color: f.status === value ? color : "var(--text-muted)",
                   fontWeight: 700,
                   fontSize: 11,
                   cursor: "pointer",
