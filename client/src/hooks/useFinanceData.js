@@ -13,7 +13,7 @@ export function useFinanceData() {
   const [investmentTrend, setInvestmentTrend] = useState([]);
   const [investmentRange, setInvestmentRange] = useState(DEFAULT_INVESTMENT_RANGE);
   const [investmentCatalog, setInvestmentCatalog] = useState([]);
-  const [apiHealth, setApiHealth] = useState({ ok: false, dbPath: null, investmentRefreshMs: null, priceCacheRefreshMs: null });
+  const [apiHealth, setApiHealth] = useState({ ok: false, dbTarget: null, investmentRefreshMs: null, priceCacheRefreshMs: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 

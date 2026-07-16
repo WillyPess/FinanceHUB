@@ -130,6 +130,27 @@ first if you need to reset it.
   returns a generic "Invalid credentials" error, whether the email exists
   or not.
 
+## Deployment (Vercel frontend + Render backend)
+
+The frontend and backend are deployed separately and talk to each other only
+over HTTP(S) — no shared proxy or domain.
+
+- **Backend (Render)**: set `FRONTEND_ORIGIN` to the deployed Vercel URL
+  (e.g. `https://financehub.vercel.app`) so CORS accepts requests from it,
+  plus `SECRET_KEY`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, and
+  `NODE_ENV=production` (this also makes the refresh cookie
+  `Secure; SameSite=None`, required for it to survive the Vercel↔Render
+  cross-site request — without it, login won't persist in production).
+- **Frontend (Vercel)**: set `VITE_API_URL` (in the Vercel project's
+  environment variables) to the deployed Render backend URL, e.g.
+  `https://financehub-api.onrender.com`. Every API/auth call in `client/src`
+  reads this via `client/src/utils/apiBase.js`; if it's unset, it falls back
+  to `http://localhost:3001` for local development.
+- Because the frontend calls the backend cross-origin in production, the
+  refresh-token cookie is sent with `credentials: "include"` on every
+  request — make sure `FRONTEND_ORIGIN` matches the Vercel URL exactly
+  (scheme + host, no trailing slash) or the cookie will be rejected.
+
 ## DBeaver connection
 
 1. Open DBeaver.

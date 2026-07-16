@@ -158,7 +158,7 @@ export default function Investments({ investments, apiHealth, onAdd, onAddPurcha
             tone={summary.marketStatus?.mode || "idle"}
           />
           <DiagnosticItem label="Retry At" value={summary.marketStatus?.nextRetryAt ? formatDateTime(summary.marketStatus.nextRetryAt) : "-"} />
-          <DiagnosticItem label="DB File" value={apiHealth?.dbPath || "-"} compact />
+          <DiagnosticItem label="DB Target" value={apiHealth?.dbTarget || "-"} compact />
         </div>
       </section>
 

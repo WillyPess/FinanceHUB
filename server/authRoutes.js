@@ -17,8 +17,12 @@ function createAuthRouter(auth, { isProduction }) {
   function setRefreshCookie(res, token) {
     res.cookie(REFRESH_COOKIE_NAME, token, {
       httpOnly: true,
+      // Vercel (frontend) and Render (backend) are different sites, so the cookie
+      // needs SameSite=None to be sent cross-site at all — which browsers only
+      // allow when Secure is also set. Locally, frontend/backend share the
+      // "localhost" site, so Strict is fine and avoids needing HTTPS in dev.
       secure: isProduction,
-      sameSite: "strict",
+      sameSite: isProduction ? "none" : "strict",
       path: "/auth",
       maxAge: auth.REFRESH_TOKEN_TTL_SECONDS * 1000,
     });

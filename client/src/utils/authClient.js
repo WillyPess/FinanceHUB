@@ -2,6 +2,8 @@
 // it vanishes on tab close/reload, which limits what an XSS payload could exfiltrate.
 // The longer-lived refresh token is an httpOnly cookie this JS layer can never read;
 // that's why a fresh page load has to round-trip through /auth/refresh to get a token again.
+import { API_BASE } from "./apiBase.js";
+
 let accessToken = null;
 let onSessionExpired = () => {};
 let refreshInFlight = null;
@@ -26,7 +28,7 @@ export async function refreshAccessToken() {
 
   refreshInFlight = (async () => {
     try {
-      const res = await fetch("/auth/refresh", { method: "POST", credentials: "include" });
+      const res = await fetch(`${API_BASE}/auth/refresh`, { method: "POST", credentials: "include" });
       if (!res.ok) {
         accessToken = null;
         return null;

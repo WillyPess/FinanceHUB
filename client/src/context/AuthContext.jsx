@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { setAccessToken, refreshAccessToken, setSessionExpiredHandler } from "../utils/authClient.js";
+import { API_BASE } from "../utils/apiBase.js";
 
 const AuthContext = createContext(null);
 
@@ -28,7 +29,7 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const res = await fetch("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
           setUser(await res.json());
         } else {
@@ -46,7 +47,7 @@ export function AuthProvider({ children }) {
     setLoginLoading(true);
     setLoginError(null);
     try {
-      const res = await fetch("/auth/login", {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -72,7 +73,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
-      await fetch("/auth/logout", { method: "POST", credentials: "include" });
+      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
     } catch (_error) {
       // Best effort — clear local state regardless of whether the request landed.
     }

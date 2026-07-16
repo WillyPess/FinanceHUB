@@ -1,6 +1,7 @@
 import { getAccessToken, refreshAccessToken, notifySessionExpired } from "./authClient.js";
+import { API_BASE } from "./apiBase.js";
 
-const BASE = "/api";
+const BASE = `${API_BASE}/api`;
 
 async function rawRequest(method, path, body) {
   const url = method === "GET"
