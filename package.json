@@ -10,7 +10,8 @@
     "install:all": "npm install && cd client && npm install",
     "create-user": "node server/create_user.js",
     "migrate": "node server/migrate.js",
-    "copy-to-turso": "node server/copy-local-to-turso.js"
+    "copy-to-turso": "node server/copy-local-to-turso.js",
+    "reset-db": "node server/reset-db.js"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",

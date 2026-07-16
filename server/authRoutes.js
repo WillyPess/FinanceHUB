@@ -33,13 +33,13 @@ function createAuthRouter(auth, { isProduction }) {
   }
 
   router.post("/login", loginLimiter, async (req, res) => {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
+    const { username, password } = req.body || {};
+    if (!username || !password) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const user = await auth.getUserByEmail(String(email).trim().toLowerCase());
-    // Always run a bcrypt compare, even for an unknown email, so response time can't leak which emails exist.
+    const user = await auth.getUserByUsername(String(username).trim());
+    // Always run a bcrypt compare, even for an unknown username, so response time can't leak which usernames exist.
     const passwordMatches = auth.verifyPassword(password, user ? user.hashed_password : auth.DUMMY_HASH);
 
     if (!user || !passwordMatches) {
@@ -51,7 +51,7 @@ function createAuthRouter(auth, { isProduction }) {
     await auth.setRefreshTokenHash(user.id, refreshToken);
     setRefreshCookie(res, refreshToken);
 
-    res.json({ accessToken, user: { id: user.id, email: user.email } });
+    res.json({ accessToken, user: { id: user.id, username: user.username } });
   });
 
   router.post("/refresh", async (req, res) => {
@@ -101,7 +101,7 @@ function createAuthRouter(auth, { isProduction }) {
     if (!user) {
       return res.status(404).json({ error: "Not found" });
     }
-    res.json({ id: user.id, email: user.email });
+    res.json({ id: user.id, username: user.username });
   });
 
   return router;

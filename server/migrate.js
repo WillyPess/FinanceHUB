@@ -79,7 +79,7 @@ const SCHEMA = `
 
   CREATE TABLE IF NOT EXISTS users (
     id                 INTEGER PRIMARY KEY AUTOINCREMENT,
-    email              TEXT UNIQUE NOT NULL,
+    username           TEXT UNIQUE NOT NULL,
     hashed_password    TEXT NOT NULL,
     refresh_token_hash TEXT,
     created_at         TEXT DEFAULT (datetime('now'))

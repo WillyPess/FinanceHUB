@@ -11,7 +11,7 @@ const { migrate } = require("./migrate");
 const LOCAL_DB_PATH = process.argv[2] || path.join(__dirname, "financehub.db");
 
 const TABLES = [
-  { name: "users", columns: ["id", "email", "hashed_password", "refresh_token_hash", "created_at"] },
+  { name: "users", columns: ["id", "username", "hashed_password", "refresh_token_hash", "created_at"] },
   { name: "transactions", columns: ["id", "icon", "description", "category", "date", "amount", "type", "created_at"] },
   { name: "debts", columns: ["id", "creditor", "total", "paid", "due_date", "note", "created_at"] },
   { name: "subscriptions", columns: ["id", "kind", "icon", "name", "category", "amount", "frequency", "next_billing", "status", "note", "created_at"] },

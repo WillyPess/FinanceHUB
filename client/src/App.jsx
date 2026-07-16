@@ -15,8 +15,8 @@ import InvestmentModal from "./components/modals/InvestmentModal.jsx";
 
 export default function App() {
   const { user, logout } = useAuth();
-  const displayName = user?.email ? user.email.split("@")[0].replace(/^\w/, (c) => c.toUpperCase()) : "Account";
-  const displayUser = { name: displayName, email: user?.email || "" };
+  const displayName = user?.username ? user.username.replace(/^\w/, (c) => c.toUpperCase()) : "Account";
+  const displayUser = { name: displayName, username: user?.username || "" };
 
   const {
     data,

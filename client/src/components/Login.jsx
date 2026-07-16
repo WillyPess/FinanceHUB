@@ -4,13 +4,13 @@ import styles from "./Login.module.css";
 
 export default function Login() {
   const { login, loginLoading, loginError } = useAuth();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!email || !password) return;
-    await login(email, password);
+    if (!username || !password) return;
+    await login(username, password);
   };
 
   return (
@@ -23,15 +23,15 @@ export default function Login() {
         <p className={styles.subtitle}>Sign in to continue</p>
 
         <div className={styles.field}>
-          <label className={styles.label} htmlFor="login-email">Email</label>
+          <label className={styles.label} htmlFor="login-username">Username</label>
           <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="login-username"
+            type="text"
+            autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className={styles.input}
-            placeholder="you@example.com"
+            placeholder="username"
             required
           />
         </div>

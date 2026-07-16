@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
     })();
   }, []);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (username, password) => {
     setLoginLoading(true);
     setLoginError(null);
     try {
@@ -51,11 +51,11 @@ export function AuthProvider({ children }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
-        setLoginError("Invalid email or password.");
+        setLoginError("Invalid username or password.");
         return false;
       }
 

@@ -5,7 +5,7 @@ const readline = require("readline");
 const { migrate } = require("./migrate");
 const { createAuth } = require("./auth");
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_PATTERN = /^[a-zA-Z0-9_.-]{3,32}$/;
 const MIN_PASSWORD_LENGTH = 12;
 const KEYCODE = { ENTER: 13, NEWLINE: 10, BACKSPACE: 127, CTRL_C: 3, CTRL_D: 4 };
 
@@ -91,9 +91,9 @@ async function main() {
       return;
     }
 
-    const email = (await prompt("Email: ")).toLowerCase();
-    if (!EMAIL_PATTERN.test(email)) {
-      console.error("Invalid email address.");
+    const username = await prompt("Username: ");
+    if (!USERNAME_PATTERN.test(username)) {
+      console.error("Invalid username. Use 3-32 characters: letters, numbers, underscore, dot, or hyphen.");
       process.exitCode = 1;
       return;
     }
@@ -112,8 +112,8 @@ async function main() {
       return;
     }
 
-    await auth.createUser(email, password);
-    console.log(`User created: ${email}`);
+    await auth.createUser(username, password);
+    console.log(`User created: ${username}`);
   } finally {
     close();
   }

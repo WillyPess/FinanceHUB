@@ -27,7 +27,7 @@ function resolveSecretKey() {
 }
 
 const SECRET_KEY = resolveSecretKey();
-// Used to run a bcrypt comparison even when no user matches, so login timing doesn't reveal whether an email exists.
+// Used to run a bcrypt comparison even when no user matches, so login timing doesn't reveal whether a username exists.
 const DUMMY_HASH = bcrypt.hashSync("no-such-user", 12);
 
 function hashPassword(password) {
@@ -43,7 +43,7 @@ function hashToken(token) {
 }
 
 function signAccessToken(user) {
-  return jwt.sign({ sub: user.id, email: user.email, type: "access" }, SECRET_KEY, {
+  return jwt.sign({ sub: user.id, username: user.username, type: "access" }, SECRET_KEY, {
     algorithm: "HS256",
     expiresIn: ACCESS_TOKEN_TTL,
   });
@@ -61,8 +61,8 @@ function verifyToken(token) {
 }
 
 function createAuth() {
-  async function getUserByEmail(email) {
-    return db.get("SELECT * FROM users WHERE email = ?", [email]);
+  async function getUserByUsername(username) {
+    return db.get("SELECT * FROM users WHERE username = ?", [username]);
   }
 
   async function getUserById(id) {
@@ -74,10 +74,10 @@ function createAuth() {
     return row.count;
   }
 
-  async function createUser(email, password) {
+  async function createUser(username, password) {
     const result = await db.run(
-      "INSERT INTO users (email, hashed_password) VALUES (?, ?)",
-      [email, hashPassword(password)]
+      "INSERT INTO users (username, hashed_password) VALUES (?, ?)",
+      [username, hashPassword(password)]
     );
     return getUserById(result.lastInsertRowid);
   }
@@ -100,7 +100,7 @@ function createAuth() {
       if (payload.type !== "access") {
         return res.status(401).json({ error: "Not authenticated" });
       }
-      req.user = { id: payload.sub, email: payload.email };
+      req.user = { id: payload.sub, username: payload.username };
       return next();
     } catch (_error) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -108,7 +108,7 @@ function createAuth() {
   }
 
   return {
-    getUserByEmail,
+    getUserByUsername,
     getUserById,
     countUsers,
     createUser,

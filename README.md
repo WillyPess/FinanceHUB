@@ -106,14 +106,14 @@ one origin).
 npm.cmd run create-user
 ```
 
-This prompts for an email and password and writes a bcrypt-hashed row into
+This prompts for a username and password and writes a bcrypt-hashed row into
 the `users` table (Turso or local file, whichever is active). It refuses to
-run again once a user already exists — delete the row from the `users` table
-first if you need to reset it.
+run again once a user already exists. To reset it, run `npm run reset-db`
+(drops and recreates all tables — see below) and then `create-user` again.
 
 ### 3. How the token flow works
 
-- `POST /auth/login` checks the email/password and returns a short-lived
+- `POST /auth/login` checks the username/password and returns a short-lived
   **access token** (30 min) in the JSON response, plus a **refresh token**
   (7 days) set as an `httpOnly` cookie scoped to `/auth`. The frontend never
   touches the refresh token directly — it can't, since JS can't read an
@@ -127,8 +127,20 @@ first if you need to reset it.
 - `POST /auth/logout` revokes the stored refresh token server-side and
   clears the cookie.
 - The login endpoint is rate-limited (5 attempts/minute/IP) and always
-  returns a generic "Invalid credentials" error, whether the email exists
+  returns a generic "Invalid credentials" error, whether the username exists
   or not.
+
+### Resetting the database
+
+```powershell
+npm.cmd run reset-db
+```
+
+Drops every table (transactions, debts, subscriptions, investments, users —
+everything) and re-runs migrations, leaving a clean empty schema. It works
+against whichever database your env vars point at (Turso or the local file)
+and asks for a `y/N` confirmation before doing anything, since this is
+irreversible. Run `create-user` afterwards to set up a fresh account.
 
 ## Deployment (Vercel frontend + Render backend)
 
