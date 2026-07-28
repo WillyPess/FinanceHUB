@@ -2,6 +2,8 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 
 const REFRESH_COOKIE_NAME = "refresh_token";
+const USERNAME_PATTERN = /^[a-zA-Z0-9_.-]{3,32}$/;
+const MIN_PASSWORD_LENGTH = 12;
 
 function createAuthRouter(auth, { isProduction }) {
   const router = express.Router();
@@ -94,6 +96,27 @@ function createAuthRouter(auth, { isProduction }) {
     }
     clearRefreshCookie(res);
     res.json({ ok: true });
+  });
+
+  router.post("/register", auth.requireAuth, async (req, res) => {
+    const { username, password } = req.body || {};
+    const trimmedUsername = String(username || "").trim();
+
+    if (!USERNAME_PATTERN.test(trimmedUsername)) {
+      return res.status(400).json({ error: "Username must be 3-32 characters: letters, numbers, underscore, dot, or hyphen." });
+    }
+
+    if (!password || String(password).length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` });
+    }
+
+    const existing = await auth.getUserByUsername(trimmedUsername);
+    if (existing) {
+      return res.status(409).json({ error: "Username is already taken." });
+    }
+
+    const user = await auth.createUser(trimmedUsername, password);
+    res.status(201).json({ id: user.id, username: user.username });
   });
 
   router.get("/me", auth.requireAuth, async (req, res) => {

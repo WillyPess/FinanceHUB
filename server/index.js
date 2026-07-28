@@ -32,90 +32,6 @@ const INVESTMENT_CATALOG = [
 const investmentTrendCache = new Map();
 let quoteStatus = { mode: "idle", message: "Waiting for quotes", nextRetryAt: null };
 
-async function ensureSeeded() {
-  const seeded = await db.get("SELECT value FROM app_meta WHERE key = ?", ["seed_version"]);
-  if (seeded) {
-    return;
-  }
-
-  const counts = {
-    transactions: (await db.get("SELECT COUNT(*) AS count FROM transactions")).count,
-    debts: (await db.get("SELECT COUNT(*) AS count FROM debts")).count,
-    subscriptions: (await db.get("SELECT COUNT(*) AS count FROM subscriptions")).count,
-  };
-
-  if (counts.transactions > 0 || counts.debts > 0 || counts.subscriptions > 0) {
-    await setAppMetaValue("seed_version", "1");
-    return;
-  }
-
-  await seedTransactions();
-  await seedSubscriptions();
-  await seedDebts();
-  await setAppMetaValue("seed_version", "1");
-}
-
-async function seedTransactions() {
-  const rows = [
-    ["1", "tickets", "Concert tickets", "Entertainment", "2026-03-07", 200, "expense"],
-    ["2", "car", "Gas and parking", "Transport", "2026-03-06", 150, "expense"],
-    ["3", "work", "Website project", "Freelance", "2026-03-05", 1500, "income"],
-    ["4", "tv", "Streaming services", "Subscriptions", "2026-03-05", 49.99, "expense"],
-    ["5", "food", "Groceries", "Food", "2026-03-04", 320, "expense"],
-    ["6", "power", "Electric bill", "Utilities", "2026-03-03", 85, "expense"],
-    ["7", "salary", "Monthly salary", "Salary", "2026-03-01", 5200, "income"],
-    ["8", "home", "Rent payment", "Housing", "2026-03-01", 1200, "expense"],
-    ["9", "health", "Pharmacy", "Health", "2026-02-20", 75, "expense"],
-    ["10", "salary", "Monthly salary", "Salary", "2026-02-01", 5200, "income"],
-    ["11", "home", "Rent payment", "Housing", "2026-02-01", 1200, "expense"],
-    ["12", "food", "Groceries", "Food", "2026-02-10", 290, "expense"],
-    ["13", "salary", "Monthly salary", "Salary", "2026-01-01", 5200, "income"],
-    ["14", "home", "Rent payment", "Housing", "2026-01-01", 1200, "expense"],
-    ["15", "salary", "Monthly salary", "Salary", "2025-12-01", 1300, "income"],
-  ];
-
-  await db.transaction(
-    rows.map(([id, icon, description, category, date, amount, type]) => ({
-      sql: "INSERT INTO transactions (id, icon, description, category, date, amount, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      args: [id, icon, description, category, date, amount, type],
-    }))
-  );
-}
-
-async function seedSubscriptions() {
-  const rows = [
-    ["s1", "subscription", "tv", "Netflix", "Streaming", 15.99, "monthly", "2026-03-20", "active", "Family plan"],
-    ["s2", "subscription", "music", "Spotify", "Streaming", 9.99, "monthly", "2026-03-18", "active", ""],
-    ["s3", "bill", "internet", "Internet", "Internet", 89.9, "monthly", "2026-03-15", "active", "300mb fiber"],
-    ["s4", "bill", "home", "Rent", "Housing", 1200, "monthly", "2026-04-01", "active", "Due every 1st"],
-    ["s5", "subscription", "design", "Adobe CC", "Software", 54.99, "monthly", "2026-03-25", "paused", "Temporarily paused"],
-    ["s6", "bill", "phone", "Mobile plan", "Phone", 49.9, "monthly", "2026-03-22", "active", "Post-paid plan"],
-    ["s7", "bill", "power", "Electricity", "Energy", 110, "monthly", "2026-03-19", "active", "Average monthly bill"],
-  ];
-
-  await db.transaction(
-    rows.map(([id, kind, icon, name, category, amount, frequency, nextBilling, status, note]) => ({
-      sql: "INSERT INTO subscriptions (id, kind, icon, name, category, amount, frequency, next_billing, status, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      args: [id, kind, icon, name, category, amount, frequency, nextBilling, status, note],
-    }))
-  );
-}
-
-async function seedDebts() {
-  const rows = [
-    ["d1", "Bank Loan", 5000, 2250, "2026-06-30", "Monthly installments"],
-    ["d2", "Credit Card", 1200, 450, "2026-04-15", "Pay minimum or full"],
-    ["d3", "Friend Loan", 550, 550, "2026-03-20", "Laptop loan"],
-  ];
-
-  await db.transaction(
-    rows.map(([id, creditor, total, paid, dueDate, note]) => ({
-      sql: "INSERT INTO debts (id, creditor, total, paid, due_date, note) VALUES (?, ?, ?, ?, ?, ?)",
-      args: [id, creditor, total, paid, dueDate, note],
-    }))
-  );
-}
-
 async function getAppMetaValue(key) {
   const row = await db.get("SELECT value FROM app_meta WHERE key = ?", [key]);
   return row?.value ?? null;
@@ -146,9 +62,9 @@ async function getManualTrendOverride(rangeKey) {
   }
 }
 
-async function resolveInvestmentIdentity(body) {
+async function resolveInvestmentIdentity(body, userId) {
   if (body.assetId) {
-    const asset = await db.get("SELECT * FROM investments_assets WHERE id = ?", [body.assetId]);
+    const asset = await db.get("SELECT * FROM investments_assets WHERE id = ? AND user_id = ?", [body.assetId, userId]);
     if (!asset) return null;
     return {
       assetId: asset.id,
@@ -184,14 +100,14 @@ async function resolveInvestmentIdentity(body) {
   };
 }
 
-async function ensureInvestmentAsset(identity) {
+async function ensureInvestmentAsset(identity, userId) {
   if (identity.assetId) {
     return identity.assetId;
   }
 
   const existing = await db.get(
-    "SELECT id FROM investments_assets WHERE symbol = ? AND provider_id = ?",
-    [identity.symbol, identity.providerId]
+    "SELECT id FROM investments_assets WHERE symbol = ? AND provider_id = ? AND user_id = ?",
+    [identity.symbol, identity.providerId, userId]
   );
   if (existing) {
     return existing.id;
@@ -199,8 +115,8 @@ async function ensureInvestmentAsset(identity) {
 
   const assetId = `asset-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
   await db.run(
-    "INSERT INTO investments_assets (id, symbol, name, market_type, provider_id, icon, vs_currency) VALUES (?, ?, ?, ?, ?, ?, 'aud')",
-    [assetId, identity.symbol, identity.name, identity.marketType, identity.providerId, identity.icon]
+    "INSERT INTO investments_assets (id, user_id, symbol, name, market_type, provider_id, icon, vs_currency) VALUES (?, ?, ?, ?, ?, ?, ?, 'aud')",
+    [assetId, userId, identity.symbol, identity.name, identity.marketType, identity.providerId, identity.icon]
   );
   return assetId;
 }
@@ -218,9 +134,9 @@ async function getMarketPricesBySymbol() {
   }, {});
 }
 
-async function getInvestmentsPayload() {
-  const assets = await db.all("SELECT * FROM investments_assets ORDER BY created_at DESC");
-  const lots = await db.all("SELECT * FROM investment_lots ORDER BY purchase_date DESC, created_at DESC");
+async function getInvestmentsPayload(userId) {
+  const assets = await db.all("SELECT * FROM investments_assets WHERE user_id = ? ORDER BY created_at DESC", [userId]);
+  const lots = await db.all("SELECT * FROM investment_lots WHERE user_id = ? ORDER BY purchase_date DESC, created_at DESC", [userId]);
   const marketPricesBySymbol = await getMarketPricesBySymbol();
   const lotsByAsset = lots.reduce((acc, lot) => {
     if (!acc[lot.asset_id]) acc[lot.asset_id] = [];
@@ -337,8 +253,8 @@ async function getInvestmentsPayload() {
   return { items, summary };
 }
 
-async function getInvestmentAssetPayload(assetId) {
-  const payload = await getInvestmentsPayload();
+async function getInvestmentAssetPayload(assetId, userId) {
+  const payload = await getInvestmentsPayload(userId);
   return payload.items.find((item) => item.id === assetId) || null;
 }
 
@@ -437,8 +353,8 @@ async function refreshCryptoQuotes(assets) {
   }
 }
 
-async function getInvestmentTrend(range) {
-  const assets = await db.all("SELECT * FROM investments_assets ORDER BY created_at ASC");
+async function getInvestmentTrend(range, userId) {
+  const assets = await db.all("SELECT * FROM investments_assets WHERE user_id = ? ORDER BY created_at ASC", [userId]);
   const marketPricesBySymbol = await getMarketPricesBySymbol();
   if (!assets.length) {
     return [];
@@ -450,7 +366,7 @@ async function getInvestmentTrend(range) {
     return manualTrend;
   }
 
-  const lots = await db.all("SELECT asset_id, purchase_date, quantity FROM investment_lots ORDER BY purchase_date ASC, created_at ASC");
+  const lots = await db.all("SELECT asset_id, purchase_date, quantity FROM investment_lots WHERE user_id = ? ORDER BY purchase_date ASC, created_at ASC", [userId]);
   const lotsByAsset = lots.reduce((acc, lot) => {
     if (!acc[lot.asset_id]) acc[lot.asset_id] = [];
     acc[lot.asset_id].push({
@@ -463,7 +379,7 @@ async function getInvestmentTrend(range) {
   const historicalByProvider = await fetchHistoricalPortfolioPrices(assets, rangeConfig);
   const timeline = buildTrendTimeline(historicalByProvider, rangeConfig);
   if (!timeline.length) {
-    const fallbackSeries = getCachedOrSyntheticTrend(assets, lotsByAsset, rangeConfig, marketPricesBySymbol);
+    const fallbackSeries = getCachedOrSyntheticTrend(assets, lotsByAsset, rangeConfig, marketPricesBySymbol, userId);
     if (fallbackSeries.length) {
       return fallbackSeries;
     }
@@ -489,7 +405,7 @@ async function getInvestmentTrend(range) {
     };
   });
 
-  investmentTrendCache.set(rangeConfig.key, { createdAt: Date.now(), data: trend });
+  investmentTrendCache.set(`${userId}:${rangeConfig.key}`, { createdAt: Date.now(), data: trend });
   return trend;
 }
 
@@ -602,8 +518,8 @@ function formatTrendLabel(timestamp, rangeConfig, index, length) {
   return showMonth ? `${day} ${month}` : day;
 }
 
-function getCachedOrSyntheticTrend(assets, lotsByAsset, rangeConfig, marketPricesBySymbol = {}) {
-  const cached = investmentTrendCache.get(rangeConfig.key);
+function getCachedOrSyntheticTrend(assets, lotsByAsset, rangeConfig, marketPricesBySymbol = {}, userId) {
+  const cached = investmentTrendCache.get(`${userId}:${rangeConfig.key}`);
   if (cached && Date.now() - cached.createdAt <= TREND_CACHE_TTL_MS && Array.isArray(cached.data) && cached.data.length) {
     return cached.data;
   }
@@ -627,7 +543,7 @@ function getCachedOrSyntheticTrend(assets, lotsByAsset, rangeConfig, marketPrice
   });
 
   if (synthetic.length) {
-    investmentTrendCache.set(rangeConfig.key, { createdAt: Date.now(), data: synthetic });
+    investmentTrendCache.set(`${userId}:${rangeConfig.key}`, { createdAt: Date.now(), data: synthetic });
   }
   return synthetic;
 }
@@ -661,7 +577,6 @@ let nextQuoteRefreshAt = 0;
 
 async function start() {
   await migrate();
-  await ensureSeeded();
 
   const auth = createAuth();
 
@@ -685,8 +600,8 @@ async function start() {
   // Everything under /api requires a valid access token.
   app.use("/api", auth.requireAuth);
 
-  app.get("/api/transactions", async (_req, res) => {
-    const rows = await db.all("SELECT * FROM transactions ORDER BY date DESC, created_at DESC");
+  app.get("/api/transactions", async (req, res) => {
+    const rows = await db.all("SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC, created_at DESC", [req.user.id]);
     res.json(rows.map((row) => ({ ...row, desc: row.description })));
   });
 
@@ -694,30 +609,36 @@ async function start() {
     const { id, icon, desc, category, date, amount, type } = req.body;
     const nextId = id || Date.now().toString();
     await db.run(
-      "INSERT INTO transactions (id, icon, description, category, date, amount, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [nextId, icon, desc, category, date, amount, type]
+      "INSERT INTO transactions (id, user_id, icon, description, category, date, amount, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [nextId, req.user.id, icon, desc, category, date, amount, type]
     );
-    const row = await db.get("SELECT * FROM transactions WHERE id = ?", [nextId]);
+    const row = await db.get("SELECT * FROM transactions WHERE id = ? AND user_id = ?", [nextId, req.user.id]);
     res.json({ ...row, desc: row.description });
   });
 
   app.put("/api/transactions/:id", async (req, res) => {
     const { icon, desc, category, date, amount, type } = req.body;
-    await db.run(
-      "UPDATE transactions SET icon = ?, description = ?, category = ?, date = ?, amount = ?, type = ? WHERE id = ?",
-      [icon, desc, category, date, amount, type, req.params.id]
+    const result = await db.run(
+      "UPDATE transactions SET icon = ?, description = ?, category = ?, date = ?, amount = ?, type = ? WHERE id = ? AND user_id = ?",
+      [icon, desc, category, date, amount, type, req.params.id, req.user.id]
     );
-    const row = await db.get("SELECT * FROM transactions WHERE id = ?", [req.params.id]);
+    if (!result.changes) {
+      return res.status(404).json({ error: "Transaction not found." });
+    }
+    const row = await db.get("SELECT * FROM transactions WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
     res.json({ ...row, desc: row.description });
   });
 
   app.delete("/api/transactions/:id", async (req, res) => {
-    await db.run("DELETE FROM transactions WHERE id = ?", [req.params.id]);
+    const result = await db.run("DELETE FROM transactions WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    if (!result.changes) {
+      return res.status(404).json({ error: "Transaction not found." });
+    }
     res.json({ ok: true, id: req.params.id });
   });
 
-  app.get("/api/debts", async (_req, res) => {
-    const rows = await db.all("SELECT * FROM debts ORDER BY created_at DESC");
+  app.get("/api/debts", async (req, res) => {
+    const rows = await db.all("SELECT * FROM debts WHERE user_id = ? ORDER BY created_at DESC", [req.user.id]);
     res.json(rows.map((row) => ({ ...row, dueDate: row.due_date })));
   });
 
@@ -725,30 +646,36 @@ async function start() {
     const { id, creditor, total, paid, dueDate, note } = req.body;
     const nextId = id || Date.now().toString();
     await db.run(
-      "INSERT INTO debts (id, creditor, total, paid, due_date, note) VALUES (?, ?, ?, ?, ?, ?)",
-      [nextId, creditor, total, paid, dueDate, note]
+      "INSERT INTO debts (id, user_id, creditor, total, paid, due_date, note) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [nextId, req.user.id, creditor, total, paid, dueDate, note]
     );
-    const row = await db.get("SELECT * FROM debts WHERE id = ?", [nextId]);
+    const row = await db.get("SELECT * FROM debts WHERE id = ? AND user_id = ?", [nextId, req.user.id]);
     res.json({ ...row, dueDate: row.due_date });
   });
 
   app.put("/api/debts/:id", async (req, res) => {
     const { creditor, total, paid, dueDate, note } = req.body;
-    await db.run(
-      "UPDATE debts SET creditor = ?, total = ?, paid = ?, due_date = ?, note = ? WHERE id = ?",
-      [creditor, total, paid, dueDate, note, req.params.id]
+    const result = await db.run(
+      "UPDATE debts SET creditor = ?, total = ?, paid = ?, due_date = ?, note = ? WHERE id = ? AND user_id = ?",
+      [creditor, total, paid, dueDate, note, req.params.id, req.user.id]
     );
-    const row = await db.get("SELECT * FROM debts WHERE id = ?", [req.params.id]);
+    if (!result.changes) {
+      return res.status(404).json({ error: "Debt not found." });
+    }
+    const row = await db.get("SELECT * FROM debts WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
     res.json({ ...row, dueDate: row.due_date });
   });
 
   app.delete("/api/debts/:id", async (req, res) => {
-    await db.run("DELETE FROM debts WHERE id = ?", [req.params.id]);
+    const result = await db.run("DELETE FROM debts WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    if (!result.changes) {
+      return res.status(404).json({ error: "Debt not found." });
+    }
     res.json({ ok: true, id: req.params.id });
   });
 
-  app.get("/api/subscriptions", async (_req, res) => {
-    const rows = await db.all("SELECT * FROM subscriptions ORDER BY status, created_at DESC");
+  app.get("/api/subscriptions", async (req, res) => {
+    const rows = await db.all("SELECT * FROM subscriptions WHERE user_id = ? ORDER BY status, created_at DESC", [req.user.id]);
     res.json(rows.map((row) => ({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing })));
   });
 
@@ -756,25 +683,31 @@ async function start() {
     const { id, kind, icon, name, category, amount, frequency, nextBilling, status, note } = req.body;
     const nextId = id || Date.now().toString();
     await db.run(
-      "INSERT INTO subscriptions (id, kind, icon, name, category, amount, frequency, next_billing, status, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [nextId, kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note]
+      "INSERT INTO subscriptions (id, user_id, kind, icon, name, category, amount, frequency, next_billing, status, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [nextId, req.user.id, kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note]
     );
-    const row = await db.get("SELECT * FROM subscriptions WHERE id = ?", [nextId]);
+    const row = await db.get("SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", [nextId, req.user.id]);
     res.json({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing });
   });
 
   app.put("/api/subscriptions/:id", async (req, res) => {
     const { kind, icon, name, category, amount, frequency, nextBilling, status, note } = req.body;
-    await db.run(
-      "UPDATE subscriptions SET kind = ?, icon = ?, name = ?, category = ?, amount = ?, frequency = ?, next_billing = ?, status = ?, note = ? WHERE id = ?",
-      [kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note, req.params.id]
+    const result = await db.run(
+      "UPDATE subscriptions SET kind = ?, icon = ?, name = ?, category = ?, amount = ?, frequency = ?, next_billing = ?, status = ?, note = ? WHERE id = ? AND user_id = ?",
+      [kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note, req.params.id, req.user.id]
     );
-    const row = await db.get("SELECT * FROM subscriptions WHERE id = ?", [req.params.id]);
+    if (!result.changes) {
+      return res.status(404).json({ error: "Subscription not found." });
+    }
+    const row = await db.get("SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
     res.json({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing });
   });
 
   app.delete("/api/subscriptions/:id", async (req, res) => {
-    await db.run("DELETE FROM subscriptions WHERE id = ?", [req.params.id]);
+    const result = await db.run("DELETE FROM subscriptions WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    if (!result.changes) {
+      return res.status(404).json({ error: "Subscription not found." });
+    }
     res.json({ ok: true, id: req.params.id });
   });
 
@@ -789,14 +722,14 @@ async function start() {
     })));
   });
 
-  app.get("/api/investments", async (_req, res) => {
-    res.json(await getInvestmentsPayload());
+  app.get("/api/investments", async (req, res) => {
+    res.json(await getInvestmentsPayload(req.user.id));
   });
 
   app.get("/api/investments/trend", async (req, res) => {
     const range = String(req.query.range || req.query.timeframe || req.query.days || "1M").toUpperCase();
     try {
-      const trend = await getInvestmentTrend(range);
+      const trend = await getInvestmentTrend(range, req.user.id);
       res.json(trend);
     } catch (error) {
       console.error("Investment trend failed:", error.message);
@@ -807,7 +740,7 @@ async function start() {
   app.post("/api/investments/lots", async (req, res) => {
     const body = req.body || {};
     const lotId = body.id || `lot-${Date.now()}`;
-    const identity = await resolveInvestmentIdentity(body);
+    const identity = await resolveInvestmentIdentity(body, req.user.id);
     const purchaseDate = body.purchaseDate || body.purchase_date || new Date().toISOString().slice(0, 10);
     const investedAmount = Number(body.investedAmount ?? body.invested_amount);
     const quantity = Number(body.quantity);
@@ -830,27 +763,30 @@ async function start() {
       ? purchasePriceRaw
       : investedAmount / quantity;
 
-    const assetId = await ensureInvestmentAsset(identity);
+    const assetId = await ensureInvestmentAsset(identity, req.user.id);
     await db.run(
-      "INSERT INTO investment_lots (id, asset_id, purchase_date, invested_amount, purchase_price, quantity, note) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [lotId, assetId, purchaseDate, investedAmount, purchasePrice, quantity, note]
+      "INSERT INTO investment_lots (id, user_id, asset_id, purchase_date, invested_amount, purchase_price, quantity, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [lotId, req.user.id, assetId, purchaseDate, investedAmount, purchasePrice, quantity, note]
     );
 
     triggerQuoteRefresh();
-    const asset = await getInvestmentAssetPayload(assetId);
+    const asset = await getInvestmentAssetPayload(assetId, req.user.id);
     res.json(asset);
   });
 
   app.delete("/api/investments/lots/:id", async (req, res) => {
-    const lot = await db.get("SELECT asset_id FROM investment_lots WHERE id = ?", [req.params.id]);
+    const lot = await db.get("SELECT asset_id FROM investment_lots WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
     if (!lot) {
       return res.status(404).json({ error: "Investment lot not found." });
     }
 
-    await db.run("DELETE FROM investment_lots WHERE id = ?", [req.params.id]);
-    const remaining = (await db.get("SELECT COUNT(*) AS count FROM investment_lots WHERE asset_id = ?", [lot.asset_id])).count;
+    await db.run("DELETE FROM investment_lots WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    const remaining = (await db.get(
+      "SELECT COUNT(*) AS count FROM investment_lots WHERE asset_id = ? AND user_id = ?",
+      [lot.asset_id, req.user.id]
+    )).count;
     if (remaining === 0) {
-      await db.run("DELETE FROM investments_assets WHERE id = ?", [lot.asset_id]);
+      await db.run("DELETE FROM investments_assets WHERE id = ? AND user_id = ?", [lot.asset_id, req.user.id]);
     }
 
     res.json({ ok: true, id: req.params.id });

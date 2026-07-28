@@ -1,4 +1,4 @@
-// One-time setup script: creates the single user allowed to log into FinanceHub.
+// CLI setup script: creates a new FinanceHub user account.
 // Run with: npm run create-user
 require("dotenv").config();
 const readline = require("readline");
@@ -85,12 +85,6 @@ async function main() {
   const { prompt, promptHidden, close } = await createPrompters();
 
   try {
-    if ((await auth.countUsers()) > 0) {
-      console.error("A user already exists. FinanceHub is single-user, so refusing to create another.");
-      process.exitCode = 1;
-      return;
-    }
-
     const username = await prompt("Username: ");
     if (!USERNAME_PATTERN.test(username)) {
       console.error("Invalid username. Use 3-32 characters: letters, numbers, underscore, dot, or hyphen.");

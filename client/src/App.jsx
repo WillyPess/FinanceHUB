@@ -8,6 +8,7 @@ import Transactions from "./components/Transactions.jsx";
 import Investments from "./components/Investments.jsx";
 import Subscriptions from "./components/Subscriptions.jsx";
 import Debts from "./components/Debts.jsx";
+import CreateUser from "./components/CreateUser.jsx";
 import TxModal from "./components/modals/TxModal.jsx";
 import DebtModal from "./components/modals/DebtModal.jsx";
 import SubModal from "./components/modals/SubModal.jsx";
@@ -254,6 +255,7 @@ export default function App() {
               onDelete={handleDeleteDebt}
             />
           )}
+          {page === "user-creation" && <CreateUser />}
         </main>
       </div>
 

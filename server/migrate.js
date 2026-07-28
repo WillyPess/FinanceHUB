@@ -5,6 +5,7 @@ const db = require("./db");
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS transactions (
     id          TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id),
     icon        TEXT,
     description TEXT NOT NULL,
     category    TEXT,
@@ -16,6 +17,7 @@ const SCHEMA = `
 
   CREATE TABLE IF NOT EXISTS debts (
     id          TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id),
     creditor    TEXT NOT NULL,
     total       REAL NOT NULL,
     paid        REAL DEFAULT 0,
@@ -26,6 +28,7 @@ const SCHEMA = `
 
   CREATE TABLE IF NOT EXISTS subscriptions (
     id           TEXT PRIMARY KEY,
+    user_id      INTEGER NOT NULL REFERENCES users(id),
     kind         TEXT CHECK(kind IN ('subscription','bill')) DEFAULT 'subscription',
     icon         TEXT,
     name         TEXT NOT NULL,
@@ -40,6 +43,7 @@ const SCHEMA = `
 
   CREATE TABLE IF NOT EXISTS investments_assets (
     id              TEXT PRIMARY KEY,
+    user_id         INTEGER NOT NULL REFERENCES users(id),
     symbol          TEXT NOT NULL,
     name            TEXT NOT NULL,
     market_type     TEXT CHECK(market_type IN ('crypto')) DEFAULT 'crypto',
@@ -54,6 +58,7 @@ const SCHEMA = `
 
   CREATE TABLE IF NOT EXISTS investment_lots (
     id             TEXT PRIMARY KEY,
+    user_id        INTEGER NOT NULL REFERENCES users(id),
     asset_id       TEXT NOT NULL REFERENCES investments_assets(id) ON DELETE CASCADE,
     purchase_date  TEXT,
     invested_amount REAL NOT NULL DEFAULT 0,
@@ -104,10 +109,25 @@ async function ensureInvestmentLotColumns() {
   }
 }
 
+// Adds user_id to tables created before multi-user support existed. Can't add it as
+// NOT NULL via ALTER TABLE when the table already has rows, so it's added nullable
+// here — fine for existing deployments, which are expected to reset the DB anyway.
+async function ensureUserIdColumn(table) {
+  const columns = await db.all(`PRAGMA table_info(${table})`);
+  if (!columns.some((column) => column.name === "user_id")) {
+    await db.exec(`ALTER TABLE ${table} ADD COLUMN user_id INTEGER REFERENCES users(id)`);
+  }
+}
+
 async function migrate() {
   await db.exec(SCHEMA);
   await ensureSubscriptionKind();
   await ensureInvestmentLotColumns();
+  await ensureUserIdColumn("transactions");
+  await ensureUserIdColumn("debts");
+  await ensureUserIdColumn("subscriptions");
+  await ensureUserIdColumn("investments_assets");
+  await ensureUserIdColumn("investment_lots");
 }
 
 if (require.main === module) {

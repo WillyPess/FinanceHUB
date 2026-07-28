@@ -6,6 +6,7 @@ const NAV = [
   { key: "investments", label: "Investments", icon: "investments" },
   { key: "fixed-costs", label: "Fixed Costs", icon: "repeat" },
   { key: "debts", label: "Debts", icon: "debt" },
+  { key: "user-creation", label: "User Creation", icon: "user" },
 ];
 
 export default function Sidebar({ page, setPage, user, onLogout }) {
