@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import * as api from "../utils/api.js";
 
-const normalizeDebt = (debt) => ({ ...debt, dueDate: debt?.dueDate || debt?.due_date });
+const normalizeDebt = (debt) => ({ ...debt, dueDate: debt?.dueDate || debt?.due_date, direction: debt?.direction || "i-owe" });
 const normalizeSubscription = (item) => ({ ...item, nextBilling: item?.nextBilling || item?.next_billing });
 const DEFAULT_INVESTMENT_RANGE = "1M";
 

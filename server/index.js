@@ -643,21 +643,21 @@ async function start() {
   });
 
   app.post("/api/debts", async (req, res) => {
-    const { id, creditor, total, paid, dueDate, note } = req.body;
+    const { id, creditor, total, paid, dueDate, note, direction } = req.body;
     const nextId = id || Date.now().toString();
     await db.run(
-      "INSERT INTO debts (id, user_id, creditor, total, paid, due_date, note) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [nextId, req.user.id, creditor, total, paid, dueDate, note]
+      "INSERT INTO debts (id, user_id, creditor, total, paid, due_date, note, direction) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [nextId, req.user.id, creditor, total, paid, dueDate, note, direction || "i-owe"]
     );
     const row = await db.get("SELECT * FROM debts WHERE id = ? AND user_id = ?", [nextId, req.user.id]);
     res.json({ ...row, dueDate: row.due_date });
   });
 
   app.put("/api/debts/:id", async (req, res) => {
-    const { creditor, total, paid, dueDate, note } = req.body;
+    const { creditor, total, paid, dueDate, note, direction } = req.body;
     const result = await db.run(
-      "UPDATE debts SET creditor = ?, total = ?, paid = ?, due_date = ?, note = ? WHERE id = ? AND user_id = ?",
-      [creditor, total, paid, dueDate, note, req.params.id, req.user.id]
+      "UPDATE debts SET creditor = ?, total = ?, paid = ?, due_date = ?, note = ?, direction = ? WHERE id = ? AND user_id = ?",
+      [creditor, total, paid, dueDate, note, direction || "i-owe", req.params.id, req.user.id]
     );
     if (!result.changes) {
       return res.status(404).json({ error: "Debt not found." });

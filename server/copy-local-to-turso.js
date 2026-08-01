@@ -13,7 +13,7 @@ const LOCAL_DB_PATH = process.argv[2] || path.join(__dirname, "financehub.db");
 const TABLES = [
   { name: "users", columns: ["id", "username", "hashed_password", "refresh_token_hash", "created_at"] },
   { name: "transactions", columns: ["id", "icon", "description", "category", "date", "amount", "type", "created_at"] },
-  { name: "debts", columns: ["id", "creditor", "total", "paid", "due_date", "note", "created_at"] },
+  { name: "debts", columns: ["id", "creditor", "total", "paid", "due_date", "note", "direction", "created_at"] },
   { name: "subscriptions", columns: ["id", "kind", "icon", "name", "category", "amount", "frequency", "next_billing", "status", "note", "created_at"] },
   { name: "investments_assets", columns: ["id", "symbol", "name", "market_type", "provider_id", "icon", "vs_currency", "last_price", "day_change_pct", "last_updated_at", "created_at"] },
   { name: "investment_lots", columns: ["id", "asset_id", "purchase_date", "invested_amount", "purchase_price", "quantity", "note", "created_at"] },

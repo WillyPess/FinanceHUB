@@ -9,6 +9,7 @@ export default function DebtModal({ initial, onSave, onClose }) {
     paid: initial?.paid?.toString() || "0",
     dueDate: initial?.dueDate || initial?.due_date || today,
     note: initial?.note || "",
+    direction: initial?.direction || "i-owe",
     id: initial?.id,
   });
 
@@ -20,6 +21,18 @@ export default function DebtModal({ initial, onSave, onClose }) {
         <div className={s.header}>
           <h3 className={s.title}>{initial ? "Edit Debt" : "New Debt"}</h3>
           <button onClick={onClose} className={s.close}>x</button>
+        </div>
+        <div className={s.typeToggle}>
+          {[["i-owe", "I Owe"], ["owed", "Owed to Me"]].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => set("direction", value)}
+              className={`${s.typeBtn} ${f.direction === value ? (value === "owed" ? s.income : s.expense) : ""}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         {[["creditor", "Creditor / Name", "text", "Bank, person, etc."], ["total", "Total Amount ($)", "number", "0.00"], ["paid", "Already Paid ($)", "number", "0.00"], ["dueDate", "Due Date", "date", ""], ["note", "Note (optional)", "text", "Details..."]].map(([k, lbl, type, ph]) => (
           <div key={k} className={s.field}>

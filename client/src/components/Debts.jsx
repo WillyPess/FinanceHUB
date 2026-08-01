@@ -16,7 +16,7 @@ export default function Debts({ debts, onAdd, onEdit, onDelete }) {
     return debts.map((debt) => {
       const dueDate = debt.dueDate || debt.due_date;
       const remaining = Math.max(debt.total - debt.paid, 0);
-      const direction = inferDirection(debt);
+      const direction = debt.direction || "i-owe";
 
       let status = "pending";
       if (remaining === 0) status = "paid";
@@ -107,12 +107,4 @@ export default function Debts({ debts, onAdd, onEdit, onDelete }) {
       </div>
     </div>
   );
-}
-
-function inferDirection(debt) {
-  const creditor = (debt.creditor || "").toLowerCase();
-  const note = (debt.note || "").toLowerCase();
-  if (note.includes("owed to me") || note.includes("split") || note.includes("they owe")) return "owed";
-  if (creditor.includes("sarah") || creditor.includes("mike")) return "owed";
-  return "i-owe";
 }

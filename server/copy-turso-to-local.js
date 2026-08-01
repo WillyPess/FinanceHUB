@@ -67,6 +67,7 @@ const SCHEMA = `
     paid        REAL DEFAULT 0,
     due_date    TEXT,
     note        TEXT,
+    direction   TEXT CHECK(direction IN ('i-owe','owed')) NOT NULL DEFAULT 'i-owe',
     created_at  TEXT DEFAULT (datetime('now'))
   );
 
@@ -106,7 +107,7 @@ const TABLES = [
   { name: "investments_assets", columns: ["id", "user_id", "symbol", "name", "market_type", "provider_id", "icon", "vs_currency", "last_price", "day_change_pct", "last_updated_at", "created_at"] },
   { name: "investment_lots", columns: ["id", "user_id", "asset_id", "purchase_date", "invested_amount", "purchase_price", "quantity", "note", "created_at"] },
   { name: "transactions", columns: ["id", "user_id", "icon", "description", "category", "date", "amount", "type", "created_at"] },
-  { name: "debts", columns: ["id", "user_id", "creditor", "total", "paid", "due_date", "note", "created_at"] },
+  { name: "debts", columns: ["id", "user_id", "creditor", "total", "paid", "due_date", "note", "direction", "created_at"] },
   { name: "subscriptions", columns: ["id", "user_id", "kind", "icon", "name", "category", "amount", "frequency", "next_billing", "status", "note", "created_at"] },
   { name: "market_prices", columns: ["symbol", "price", "previous_price", "day_change_pct", "updated_at"] },
   { name: "app_meta", columns: ["key", "value", "created_at"] },

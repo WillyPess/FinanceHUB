@@ -23,6 +23,7 @@ const SCHEMA = `
     paid        REAL DEFAULT 0,
     due_date    TEXT,
     note        TEXT,
+    direction   TEXT CHECK(direction IN ('i-owe','owed')) NOT NULL DEFAULT 'i-owe',
     created_at  TEXT DEFAULT (datetime('now'))
   );
 
@@ -112,6 +113,15 @@ async function ensureInvestmentLotColumns() {
 // Adds user_id to tables created before multi-user support existed. Can't add it as
 // NOT NULL via ALTER TABLE when the table already has rows, so it's added nullable
 // here — fine for existing deployments, which are expected to reset the DB anyway.
+async function ensureDebtDirectionColumn() {
+  const columns = await db.all("PRAGMA table_info(debts)");
+  if (!columns.some((column) => column.name === "direction")) {
+    await db.exec(
+      "ALTER TABLE debts ADD COLUMN direction TEXT CHECK(direction IN ('i-owe','owed')) NOT NULL DEFAULT 'i-owe'"
+    );
+  }
+}
+
 async function ensureUserIdColumn(table) {
   const columns = await db.all(`PRAGMA table_info(${table})`);
   if (!columns.some((column) => column.name === "user_id")) {
@@ -123,6 +133,7 @@ async function migrate() {
   await db.exec(SCHEMA);
   await ensureSubscriptionKind();
   await ensureInvestmentLotColumns();
+  await ensureDebtDirectionColumn();
   await ensureUserIdColumn("transactions");
   await ensureUserIdColumn("debts");
   await ensureUserIdColumn("subscriptions");
