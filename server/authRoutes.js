@@ -16,6 +16,14 @@ function createAuthRouter(auth, { isProduction }) {
     message: { error: "Too many login attempts. Try again in a minute." },
   });
 
+  const registerLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many account creation attempts. Try again in a minute." },
+  });
+
   function setRefreshCookie(res, token) {
     res.cookie(REFRESH_COOKIE_NAME, token, {
       httpOnly: true,
@@ -98,7 +106,7 @@ function createAuthRouter(auth, { isProduction }) {
     res.json({ ok: true });
   });
 
-  router.post("/register", auth.requireAuth, async (req, res) => {
+  router.post("/register", registerLimiter, async (req, res) => {
     const { username, password } = req.body || {};
     const trimmedUsername = String(username || "").trim();
 

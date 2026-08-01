@@ -9,6 +9,8 @@ export function AuthProvider({ children }) {
   const [initializing, setInitializing] = useState(true);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState(null);
 
   const handleSessionExpired = useCallback(() => {
     setUser(null);
@@ -71,6 +73,31 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const register = useCallback(async (username, password) => {
+    setRegisterLoading(true);
+    setRegisterError(null);
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setRegisterError(data.error || "Could not create account.");
+        return false;
+      }
+
+      return login(username, password);
+    } catch (_error) {
+      setRegisterError("Could not reach the server. Please try again.");
+      return false;
+    } finally {
+      setRegisterLoading(false);
+    }
+  }, [login]);
+
   const logout = useCallback(async () => {
     try {
       await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
@@ -82,8 +109,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, initializing, login, logout, loginLoading, loginError }),
-    [user, initializing, login, logout, loginLoading, loginError]
+    () => ({ user, initializing, login, logout, loginLoading, loginError, register, registerLoading, registerError }),
+    [user, initializing, login, logout, loginLoading, loginError, register, registerLoading, registerError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
