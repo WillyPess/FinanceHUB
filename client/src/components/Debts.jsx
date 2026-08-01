@@ -51,11 +51,11 @@ export default function Debts({ debts, onAdd, onEdit, onDelete }) {
       <div className={styles.summaryGrid}>
         <div className={`${styles.summaryCard} ${styles.oweCard}`}>
           <div className={styles.summaryLabel}>I OWE (PENDING)</div>
-          <div className={styles.oweValue}>{fmt(iOwePending)}</div>
+          <div className={`${styles.oweValue} ledgerTotal`}>{fmt(iOwePending)}</div>
         </div>
         <div className={`${styles.summaryCard} ${styles.owedCard}`}>
           <div className={styles.summaryLabel}>OWED TO ME (PENDING)</div>
-          <div className={styles.owedValue}>{fmt(owedPending)}</div>
+          <div className={`${styles.owedValue} ledgerTotal`}>{fmt(owedPending)}</div>
         </div>
       </div>
 

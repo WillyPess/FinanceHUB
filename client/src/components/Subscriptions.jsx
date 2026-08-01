@@ -101,7 +101,7 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
                       <div
                         className={styles.daysTag}
                         style={{
-                          background: urgent ? "rgba(239,91,91,0.16)" : "var(--surface-3)",
+                          background: urgent ? "rgba(161,58,46,0.16)" : "var(--surface-3)",
                           color: urgent ? "var(--negative)" : "var(--text-muted)",
                         }}
                       >
@@ -125,10 +125,10 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
                   <div key={item.id} style={{ marginBottom: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4, gap: 8 }}>
                       <span style={{ color: "var(--text-secondary)" }}>{item.icon} {item.name} | {item.kind === "bill" ? "Bill" : "Subscription"}</span>
-                      <span style={{ color: "var(--text-muted)" }}>{fmt(monthly)}/mo ({pct.toFixed(0)}%)</span>
+                      <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>{fmt(monthly)}/mo ({pct.toFixed(0)}%)</span>
                     </div>
-                    <div style={{ height: 6, background: "var(--surface-3)", borderRadius: 3 }}>
-                      <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent-blue)", borderRadius: 3, transition: "width 0.5s" }} />
+                    <div style={{ height: 6, background: "var(--surface-3)", borderRadius: "var(--radius-xs)" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent-blue)", borderRadius: "var(--radius-xs)", transition: "width 0.5s" }} />
                     </div>
                   </div>
                 );
@@ -153,14 +153,14 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
 
 function SummaryCard({ label, value, hint, color }) {
   return (
-    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 20, minWidth: 0 }}>
+    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-card)", padding: 19, minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 12 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "var(--text-muted)" }}>{label.toUpperCase()}</div>
-        <div style={{ minWidth: 36, height: 32, padding: "0 8px", background: "var(--surface-3)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", flexShrink: 0 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-muted)" }}>{label.toUpperCase()}</div>
+        <div style={{ minWidth: 36, height: 30, padding: "0 8px", background: "var(--surface-3)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-xs)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-secondary)", flexShrink: 0 }}>
           {hint}
         </div>
       </div>
-      <div style={{ fontSize: "clamp(18px, 4vw, 24px)", fontWeight: 800, color, overflowWrap: "anywhere" }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(17px, 4vw, 23px)", fontWeight: 700, color, overflowWrap: "anywhere" }}>{value}</div>
     </div>
   );
 }
@@ -169,7 +169,7 @@ function OverviewRow({ label, value }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-subtle)", paddingBottom: 10 }}>
       <span style={{ color: "var(--text-muted)", fontSize: 14 }}>{label}</span>
-      <strong style={{ color: "var(--text-primary)" }}>{value}</strong>
+      <strong style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>{value}</strong>
     </div>
   );
 }

@@ -34,7 +34,6 @@ export default function App() {
     deleteSubscription,
     addInvestmentPurchase,
     deleteInvestmentPurchase,
-    setInvestmentRange,
     refreshInvestments,
   } = useFinanceData();
 
@@ -114,7 +113,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 12, background: "var(--panel-bg)" }}>
-        <div style={{ fontSize: 32, color: "var(--text-primary)" }}>$</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 32, color: "var(--accent-blue)" }}>$</div>
         <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading FinanceHub...</div>
       </div>
     );
@@ -123,10 +122,10 @@ export default function App() {
   if (error) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 16, padding: 32, background: "var(--panel-bg)" }}>
-        <div style={{ fontSize: 40 }}>!</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 36, color: "var(--negative)" }}>!</div>
         <div style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)" }}>Cannot connect to server</div>
         <div style={{ color: "var(--text-muted)", fontSize: 14, textAlign: "center", maxWidth: 400 }}>{error}</div>
-        <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: 10, padding: "16px 20px", fontSize: 13, color: "var(--text-secondary)", fontFamily: "monospace" }}>
+        <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", padding: "16px 20px", fontSize: 13, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
           Make sure you ran: <b>npm run dev</b> from the project root
         </div>
       </div>
@@ -151,16 +150,17 @@ export default function App() {
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div
                 style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: "50%",
+                  width: 46,
+                  height: 46,
+                  borderRadius: "var(--radius-lg)",
                   background: "linear-gradient(135deg, var(--accent-blue), var(--accent-magenta))",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "#fff",
-                  fontWeight: 800,
-                  fontSize: 18,
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 700,
+                  fontSize: 17,
                   flexShrink: 0,
                 }}
               >
@@ -176,7 +176,7 @@ export default function App() {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "var(--text-muted)", textTransform: "uppercase" }}>
+              <label style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-muted)", textTransform: "uppercase" }}>
                 Currency
               </label>
               <select
@@ -184,12 +184,12 @@ export default function App() {
                 onChange={handleDisplayCurrencyChange}
                 style={{
                   border: "1px solid var(--border-subtle)",
-                  borderRadius: 10,
+                  borderRadius: "var(--radius-sm)",
                   padding: "10px 12px",
                   background: "var(--surface-2)",
                   color: "var(--text-primary)",
+                  fontFamily: "var(--font-mono)",
                   fontWeight: 700,
-                  fontFamily: "inherit",
                 }}
               >
                 {getDisplayCurrencyOptions().map((currencyCode) => (
@@ -203,9 +203,6 @@ export default function App() {
           {page === "dashboard" && (
             <Dashboard
               data={data}
-              onEditTx={openEditTx}
-              onDeleteTx={handleDeleteTransaction}
-              onChangeInvestmentRange={setInvestmentRange}
               onGoToBills={() => setPage("fixed-costs")}
               onGoToInvestments={() => setPage("investments")}
               onGoToDebts={() => setPage("debts")}
@@ -270,12 +267,13 @@ export default function App() {
             alignItems: "center",
             gap: 10,
             padding: "12px 16px",
-            borderRadius: 14,
-            border: `1px solid ${saveNotice.type === "success" ? "rgba(31,191,143,0.35)" : "rgba(239,91,91,0.4)"}`,
+            borderRadius: "var(--radius-md)",
+            border: `1px solid ${saveNotice.type === "success" ? "rgba(47,107,79,0.35)" : "rgba(161,58,46,0.4)"}`,
             background: "var(--surface-2)",
             color: saveNotice.type === "success" ? "var(--positive)" : "var(--negative)",
-            boxShadow: "var(--shadow-card)",
-            fontSize: 14,
+            boxShadow: "var(--shadow-lg)",
+            fontFamily: "var(--font-mono)",
+            fontSize: 13,
             fontWeight: 700,
           }}
         >

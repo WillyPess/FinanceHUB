@@ -11,6 +11,7 @@
     "create-user": "node server/create_user.js",
     "migrate": "node server/migrate.js",
     "copy-to-turso": "node server/copy-local-to-turso.js",
+    "copy-from-turso": "node server/copy-turso-to-local.js",
     "reset-db": "node server/reset-db.js"
   },
   "dependencies": {

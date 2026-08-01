@@ -7,7 +7,7 @@ export default function ProtectedRoute({ children }) {
   if (initializing) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 12, background: "var(--panel-bg)" }}>
-        <div style={{ fontSize: 32, color: "var(--text-primary)" }}>$</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 32, color: "var(--accent-blue)" }}>$</div>
         <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading FinanceHub...</div>
       </div>
     );

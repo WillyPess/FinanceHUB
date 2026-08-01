@@ -1,5 +1,5 @@
 .page {
-  padding: 24px 30px 34px;
+  padding: 26px 32px 36px;
 }
 
 .header {
@@ -12,8 +12,9 @@
 }
 
 .title {
-  font-size: 26px;
+  font-size: 27px;
   font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
@@ -27,13 +28,18 @@
   border: none;
   background: var(--accent-magenta);
   color: #fff;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 13px 20px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.addBtn:hover {
+  opacity: 0.88;
 }
 
 .summaryGrid {
@@ -48,29 +54,32 @@
   padding: 20px 22px;
   border: 1px solid var(--border-subtle);
   background: var(--surface-2);
+  box-shadow: var(--shadow-card);
   min-width: 0;
 }
 
 .oweCard {
-  border-color: rgba(239, 91, 91, 0.3);
+  border-color: rgba(161, 58, 46, 0.32);
 }
 
 .owedCard {
-  border-color: rgba(31, 191, 143, 0.3);
+  border-color: rgba(47, 107, 79, 0.32);
 }
 
 .summaryLabel {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin-bottom: 10px;
 }
 
 .oweValue,
 .owedValue {
-  font-size: clamp(18px, 4vw, 26px);
-  font-weight: 800;
+  font-family: var(--font-mono);
+  font-size: clamp(18px, 4vw, 25px);
+  font-weight: 700;
   overflow-wrap: anywhere;
 }
 
@@ -87,7 +96,7 @@
   gap: 6px;
   background: var(--surface-2);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 4px;
   margin-bottom: 24px;
 }
@@ -96,9 +105,10 @@
   border: none;
   background: transparent;
   color: var(--text-muted);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 9px 14px;
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -132,30 +142,36 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 12px;
+  border-radius: var(--radius-xs);
+  border: 1px solid transparent;
+  padding: 4px 10px;
+  font-size: 11px;
   font-weight: 700;
-  text-transform: lowercase;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .chipMuted {
   background: var(--surface-3);
+  border-color: var(--border-subtle);
   color: var(--text-secondary);
 }
 
 .pending {
-  background: rgba(201, 130, 15, 0.18);
+  background: rgba(154, 82, 32, 0.16);
+  border-color: rgba(154, 82, 32, 0.35);
   color: var(--accent-gold);
 }
 
 .partial {
-  background: rgba(91, 124, 255, 0.16);
+  background: rgba(124, 95, 31, 0.16);
+  border-color: rgba(124, 95, 31, 0.35);
   color: var(--accent-blue);
 }
 
 .paid {
-  background: rgba(31, 191, 143, 0.16);
+  background: rgba(47, 107, 79, 0.16);
+  border-color: rgba(47, 107, 79, 0.35);
   color: var(--accent-teal);
 }
 
@@ -188,8 +204,9 @@
 
 .negativeAmount,
 .positiveAmount {
+  font-family: var(--font-mono);
   font-size: clamp(16px, 4vw, 20px);
-  font-weight: 800;
+  font-weight: 700;
   overflow-wrap: anywhere;
   flex-shrink: 0;
 }
@@ -221,11 +238,20 @@
   background: transparent;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 600;
   color: var(--text-secondary);
+}
+
+.iconBtn:hover {
+  color: var(--text-primary);
 }
 
 .deleteBtn {
   color: var(--negative);
+}
+
+.deleteBtn:hover {
+  opacity: 0.75;
 }
 
 .empty {
@@ -242,5 +268,11 @@
   .grid,
   .summaryGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 18px 26px;
   }
 }

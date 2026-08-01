@@ -1,5 +1,5 @@
 .page {
-  padding: 24px 30px 34px;
+  padding: 26px 32px 36px;
 }
 
 .header {
@@ -12,8 +12,9 @@
 }
 
 .title {
-  font-size: 26px;
+  font-size: 27px;
   font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
@@ -26,14 +27,19 @@
 .addBtn {
   border: none;
   background: var(--accent-teal);
-  color: #0b1a15;
-  border-radius: 14px;
+  color: #f7f8f2;
+  border-radius: var(--radius-md);
   padding: 13px 20px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.addBtn:hover {
+  opacity: 0.88;
 }
 
 .toolbar {
@@ -62,11 +68,17 @@
   width: 100%;
   border: 1px solid var(--border-subtle);
   background: var(--surface-2);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 14px 16px 14px 44px;
   font-size: 14px;
   color: var(--text-primary);
   outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(124, 95, 31, 0.15);
 }
 
 .filterGroup {
@@ -74,7 +86,7 @@
   gap: 6px;
   background: var(--surface-2);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 4px;
 }
 
@@ -82,10 +94,12 @@
   border: none;
   background: transparent;
   color: var(--text-muted);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 9px 14px;
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .active {
@@ -97,6 +111,7 @@
   background: var(--surface-2);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 
@@ -109,11 +124,13 @@
 }
 
 .tableHead {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
 .amountHeader {
@@ -153,17 +170,21 @@
 
 .badge {
   display: inline-flex;
-  padding: 5px 12px;
-  border-radius: 999px;
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
   background: var(--surface-3);
   color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .dateCell {
+  font-family: var(--font-mono);
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .amountCell {
@@ -172,8 +193,9 @@
 
 .income,
 .expense {
-  font-size: 16px;
-  font-weight: 800;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
   overflow-wrap: anywhere;
 }
 
@@ -197,11 +219,20 @@
   background: transparent;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 600;
   color: var(--text-secondary);
+}
+
+.iconBtn:hover {
+  color: var(--text-primary);
 }
 
 .deleteBtn {
   color: var(--negative);
+}
+
+.deleteBtn:hover {
+  opacity: 0.75;
 }
 
 .empty {
@@ -217,6 +248,10 @@
 }
 
 @media (max-width: 900px) {
+  .page {
+    padding: 20px 18px 26px;
+  }
+
   .tableHead {
     display: none;
   }

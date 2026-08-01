@@ -115,7 +115,7 @@ export default function Investments({ investments, apiHealth, onAdd, onAddPurcha
       </div>
 
       <div className={styles.summaryGrid}>
-        <SummaryCard label="Portfolio Value" value={fmt(summary.portfolioValue || 0)} tone="blue" pulse={summaryPulse.portfolioValue} />
+        <SummaryCard label="Portfolio Value" value={fmt(summary.portfolioValue || 0)} tone="blue" pulse={summaryPulse.portfolioValue} highlight />
         <SummaryCard label="Total Invested" value={fmt(summary.portfolioCost || 0)} tone="slate" pulse={summaryPulse.portfolioCost} />
         <SummaryCard
           label="Total P/L"
@@ -255,11 +255,11 @@ export default function Investments({ investments, apiHealth, onAdd, onAddPurcha
   );
 }
 
-function SummaryCard({ label, value, tone, pulse }) {
+function SummaryCard({ label, value, tone, pulse, highlight }) {
   return (
     <div className={`${styles.summaryCard} ${styles[tone]} ${pulse ? styles.valuePulse : ""}`}>
       <div className={styles.summaryLabel}>{label}</div>
-      <div className={styles.summaryValue}>{value}</div>
+      <div className={highlight ? `${styles.summaryValue} ledgerTotal` : styles.summaryValue}>{value}</div>
     </div>
   );
 }

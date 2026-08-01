@@ -14,21 +14,24 @@ export const CAT_ICONS = {
   Other: "package",
 };
 
-// Dark-surface categorical palette — CVD-checked (validate_palette.js, --mode dark).
+// Light-paper categorical "ink wheel" — re-verified for the ledger palette
+// (hand-computed WCAG contrast, ~4.1-7.1:1 against panel-bg #e8eae0 and
+// surface-2 #f7f8f2; the prior dark-surface set fell to ~3:1 here and read
+// washed out, so it was re-hued rather than reused as-is).
 // Fixed hue-to-category mapping so color always follows category identity, never sort rank.
 export const CAT_COLORS = {
-  Housing: "#3987e5",
-  Food: "#199e70",
-  Shopping: "#c98500",
-  Utilities: "#008300",
-  Entertainment: "#9085e9",
-  Transport: "#e66767",
-  Health: "#d55181",
-  Subscriptions: "#d95926",
-  Salary: "#199e70",
-  Freelance: "#3987e5",
-  Investment: "#9085e9",
-  Other: "#7d83b8",
+  Housing: "#3d5a99",
+  Food: "#2f6b4f",
+  Shopping: "#9a5220",
+  Utilities: "#6b7233",
+  Entertainment: "#6b5ca0",
+  Transport: "#a13a2e",
+  Health: "#95435a",
+  Subscriptions: "#8a6a1e",
+  Salary: "#2f6b4f",
+  Freelance: "#3d5a99",
+  Investment: "#6b5ca0",
+  Other: "#5c6355",
 };
 
 export const TX_CATS = Object.keys(CAT_ICONS);

@@ -42,8 +42,8 @@ export default function SubModal({ initial, onSave, onClose }) {
                   flex: 1,
                   padding: "10px 8px",
                   border: `2px solid ${f.kind === value ? "var(--accent-teal)" : "var(--border-subtle)"}`,
-                  borderRadius: 10,
-                  background: f.kind === value ? "rgba(31,191,143,0.14)" : "var(--panel-bg)",
+                  borderRadius: "var(--radius-sm)",
+                  background: f.kind === value ? "rgba(47,107,79,0.14)" : "var(--panel-bg)",
                   color: f.kind === value ? "var(--accent-teal)" : "var(--text-muted)",
                   fontWeight: 700,
                   cursor: "pointer",
@@ -119,9 +119,9 @@ export default function SubModal({ initial, onSave, onClose }) {
           <label className={s.label}>Status</label>
           <div style={{ display: "flex", gap: 8 }}>
             {[
-              ["active", "Active", "rgba(31,191,143,0.14)", "var(--accent-teal)"],
-              ["paused", "Paused", "rgba(201,130,15,0.16)", "var(--accent-gold)"],
-              ["cancelled", "Cancelled", "rgba(239,91,91,0.14)", "var(--negative)"],
+              ["active", "Active", "rgba(47,107,79,0.14)", "var(--accent-teal)"],
+              ["paused", "Paused", "rgba(154,82,32,0.16)", "var(--accent-gold)"],
+              ["cancelled", "Cancelled", "rgba(161,58,46,0.14)", "var(--negative)"],
             ].map(([value, label, bg, color]) => (
               <button
                 key={value}
@@ -131,7 +131,7 @@ export default function SubModal({ initial, onSave, onClose }) {
                   flex: 1,
                   padding: "8px 4px",
                   border: `2px solid ${f.status === value ? color : "var(--border-subtle)"}`,
-                  borderRadius: 8,
+                  borderRadius: "var(--radius-sm)",
                   background: f.status === value ? bg : "var(--panel-bg)",
                   color: f.status === value ? color : "var(--text-muted)",
                   fontWeight: 700,

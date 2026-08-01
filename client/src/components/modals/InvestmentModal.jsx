@@ -108,7 +108,7 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
           <div
             style={{
               border: "1px solid var(--border-subtle)",
-              borderRadius: 10,
+              borderRadius: "var(--radius-sm)",
               padding: "12px 14px",
               display: "flex",
               alignItems: "center",
@@ -124,12 +124,13 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
                   minWidth: 48,
                   height: 28,
                   border: "1px solid var(--border-strong)",
-                  borderRadius: 6,
+                  borderRadius: "var(--radius-xs)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontWeight: 800,
-                  fontSize: 13,
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 700,
+                  fontSize: 12,
                   background: "var(--surface-3)",
                   color: "var(--text-primary)",
                 }}
@@ -142,19 +143,21 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {selectedAsset.currentPrice != null && (
-                <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--text-primary)" }}>
                   {fmtUsdFromAud(selectedAsset.currentPrice)}
                 </div>
               )}
               {selectedAsset.dayChangePct != null && (
                 <div
                   style={{
-                    padding: "6px 10px",
-                    borderRadius: 10,
-                    background: selectedAsset.dayChangePct >= 0 ? "rgba(31,191,143,0.14)" : "rgba(239,91,91,0.14)",
+                    padding: "5px 9px",
+                    borderRadius: "var(--radius-xs)",
+                    border: `1px solid ${selectedAsset.dayChangePct >= 0 ? "rgba(47,107,79,0.32)" : "rgba(161,58,46,0.32)"}`,
+                    background: selectedAsset.dayChangePct >= 0 ? "rgba(47,107,79,0.14)" : "rgba(161,58,46,0.14)",
                     color: selectedAsset.dayChangePct >= 0 ? "var(--positive)" : "var(--negative)",
+                    fontFamily: "var(--font-mono)",
                     fontWeight: 700,
-                    fontSize: 13,
+                    fontSize: 12,
                   }}
                 >
                   {selectedAsset.dayChangePct >= 0 ? "+" : ""}{selectedAsset.dayChangePct.toFixed(2)}%
@@ -220,14 +223,14 @@ export default function InvestmentModal({ catalog, initialAsset, onSave, onClose
           <button
             type="button"
             onClick={() => save({ keepOpen: true })}
-            style={{ padding: "12px 18px", border: "none", borderRadius: 10, background: "var(--accent-blue)", color: "#fff", fontWeight: 700, cursor: "pointer" }}
+            style={{ padding: "12px 18px", border: "none", borderRadius: "var(--radius-md)", background: "var(--accent-blue)", color: "#fff", fontWeight: 700, cursor: "pointer" }}
           >
             Save and add another
           </button>
           <button
             type="button"
             onClick={() => save({ keepOpen: false })}
-            style={{ padding: "12px 18px", border: "none", borderRadius: 10, background: "var(--accent-blue)", color: "#fff", fontWeight: 700, cursor: "pointer" }}
+            style={{ padding: "12px 18px", border: "none", borderRadius: "var(--radius-md)", background: "var(--accent-blue)", color: "#fff", fontWeight: 700, cursor: "pointer" }}
           >
             Save
           </button>

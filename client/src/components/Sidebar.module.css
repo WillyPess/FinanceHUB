@@ -2,7 +2,7 @@
   width: 260px;
   min-height: 100%;
   background: var(--surface-1);
-  border-right: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--cover-border);
   padding: 22px 16px 18px;
   display: flex;
   flex-direction: column;
@@ -13,33 +13,36 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 10px 12px 24px;
+  padding: 10px 12px 26px;
 }
 
 .brandMark {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-magenta));
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-family: var(--font-mono);
+  font-size: 22px;
   line-height: 1;
-  font-weight: 800;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .brandName {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
-  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  color: var(--cover-text);
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   padding: 8px 0 24px;
   flex: 1;
 }
@@ -48,37 +51,38 @@
   border: none;
   background: transparent;
   border-radius: var(--radius-sm);
-  padding: 14px 16px;
+  padding: 13px 16px;
   display: flex;
   align-items: center;
   gap: 14px;
-  color: var(--text-muted);
-  font-size: 15px;
+  color: var(--cover-text-muted);
+  font-size: 14px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .navBtn:hover {
-  background: var(--surface-2);
-  color: var(--text-secondary);
+  background: var(--surface-hover);
+  color: var(--cover-text);
 }
 
 .active {
-  background: var(--surface-2);
-  color: var(--accent-teal);
+  background: var(--surface-hover);
+  color: var(--cover-accent);
+  box-shadow: inset 3px 0 0 var(--cover-accent);
 }
 
 .navIcon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   flex: 0 0 auto;
 }
 
 .userCard {
   margin-top: auto;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--cover-border);
   padding: 20px 10px 4px;
   display: flex;
   align-items: center;
@@ -86,15 +90,17 @@
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: var(--surface-3);
-  color: var(--accent-teal);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  color: var(--cover-accent);
+  font-family: var(--font-mono);
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .userInfo {
@@ -105,7 +111,7 @@
 .userName {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--cover-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -113,7 +119,7 @@
 
 .userEmail {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--cover-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -122,12 +128,18 @@
 .logoutBtn {
   border: none;
   background: transparent;
-  color: var(--text-muted);
-  font-size: 20px;
+  color: var(--cover-text-muted);
+  font-size: 19px;
   cursor: pointer;
+  transition: color 0.15s ease;
 }
 
-/* mobile: collapse rail into a fixed bottom tab bar, like a native app */
+.logoutBtn:hover {
+  color: var(--negative);
+}
+
+/* mobile: collapse rail into a fixed bottom tab bar, like a native app —
+   the cover's bottom edge, still ink-dark against the paper page above it */
 @media (max-width: 900px) {
   .sidebar {
     position: fixed;
@@ -137,9 +149,10 @@
     width: 100%;
     min-height: auto;
     border-right: none;
-    border-top: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--cover-border);
     border-radius: 0;
     padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -4px 16px rgba(27, 36, 31, 0.14);
     z-index: 100;
   }
 
@@ -164,6 +177,10 @@
     flex: 1;
     min-width: 0;
     border-radius: var(--radius-sm);
+  }
+
+  .active {
+    box-shadow: inset 0 -3px 0 var(--cover-accent);
   }
 
   .navBtn span {
