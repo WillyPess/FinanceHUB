@@ -8,11 +8,11 @@
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 18px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .title {
-  font-size: 27px;
+  font-size: 25px;
   line-height: 1.1;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -25,49 +25,23 @@
   font-size: 14px;
 }
 
-.exportBtn {
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-2);
-  color: var(--text-primary);
-  border-radius: var(--radius-md);
-  padding: 11px 18px;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.exportBtn:hover {
-  background: var(--surface-3);
-  border-color: var(--border-strong);
-}
-
-.exportIcon {
-  font-size: 16px;
-}
-
+/* stat row */
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 22px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .statCard {
-  border-radius: var(--radius-md);
-  padding: 19px 21px;
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
   border: 1px solid var(--border-subtle);
   background: var(--surface-2);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
-  min-height: 108px;
   box-shadow: var(--shadow-card);
 }
 
@@ -78,7 +52,7 @@
 
 .statCard[role="button"]:hover {
   border-color: var(--border-strong);
-  background: var(--surface-3);
+  background: var(--surface-hover);
 }
 
 .statTop {
@@ -91,564 +65,429 @@
 .statLabel {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
   min-width: 0;
 }
 
+.statIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .statValue {
   font-family: var(--font-mono);
-  font-size: clamp(16px, 4.2vw, 21px);
-  font-weight: 700;
+  font-size: clamp(16px, 4.2vw, 20px);
+  font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text-primary);
   overflow-wrap: anywhere;
 }
 
-.statIcon {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.blue .statIcon { background: rgba(124, 95, 31, 0.16); color: var(--accent-blue); }
-.gold .statIcon { background: rgba(154, 82, 32, 0.18); color: var(--accent-gold); }
-.magenta .statIcon { background: rgba(107, 59, 99, 0.16); color: var(--accent-magenta); }
-.teal .statIcon { background: rgba(47, 107, 79, 0.18); color: var(--accent-teal); }
-
-.tripleGrid {
-  display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(300px, 1fr) minmax(300px, 1.05fr);
-  gap: 18px;
-  margin-bottom: 20px;
-  align-items: start;
-}
-
-.stackCol {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
+/* shared card shell */
 .card {
   background: var(--surface-2);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 23px 25px;
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
   box-shadow: var(--shadow-card);
 }
 
+.wide {
+  margin-bottom: 14px;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
 .cardTitle {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: -0.005em;
-  color: var(--text-primary);
-  margin-bottom: 14px;
-}
-
-.subCardTitle {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-/* spending donut */
-.donutCenterWrap {
-  position: relative;
-  height: 220px;
-}
-
-.donutCenter {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0 34px;
-  pointer-events: none;
-}
-
-.donutCenterValue {
-  font-family: var(--font-mono);
-  font-size: clamp(15px, 4vw, 21px);
+  font-size: 12.5px;
   font-weight: 700;
-  color: var(--text-primary);
-  text-align: center;
-  overflow-wrap: anywhere;
-}
-
-.donutCenterLabel {
-  margin-top: 4px;
-  font-size: 12px;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.categoryList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.categoryRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13px;
-}
-
-.categoryName {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-secondary);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.categoryDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.categoryAmt {
+.cardFigure {
   font-family: var(--font-mono);
-  color: var(--text-primary);
-  font-weight: 700;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.categoryPct {
-  color: var(--text-muted);
+  font-size: 23px;
   font-weight: 600;
-  margin-left: 4px;
-}
-
-.emptyState {
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-/* cashflow bars */
-.cashflowRow {
-  margin-bottom: 14px;
-}
-
-.cashflowLabelRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-
-.cashflowLabel {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-
-.cashflowValue {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
   color: var(--text-primary);
-  overflow-wrap: anywhere;
-}
-
-.cashflowTrack {
-  height: 7px;
-  background: var(--surface-3);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.cashflowFill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.5s ease;
-}
-
-.cashflowFill.teal { background: var(--accent-teal); }
-.cashflowFill.magenta { background: var(--accent-magenta); }
-
-.balanceRow {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 10px;
   margin-top: 8px;
-}
-
-.balancePositive {
-  font-family: var(--font-mono);
-  font-size: clamp(18px, 4.5vw, 25px);
-  font-weight: 700;
-  color: var(--text-primary);
   overflow-wrap: anywhere;
 }
 
-.balanceNegative {
-  font-family: var(--font-mono);
-  font-size: clamp(18px, 4.5vw, 25px);
-  font-weight: 700;
-  color: var(--negative);
-  overflow-wrap: anywhere;
+.deltaPositive,
+.deltaNegative {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 6px;
 }
 
-.balanceLabel {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-
-.divider {
-  height: 1px;
-  background: var(--border-subtle);
-  margin: 18px 0 14px;
-}
-
-.billsHeaderRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.deltaPositive { color: var(--positive); }
+.deltaNegative { color: var(--negative); }
 
 .linkBtn {
   border: none;
   background: transparent;
-  color: var(--accent-blue);
-  font-size: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   cursor: pointer;
+  padding: 6px 0;
+  flex-shrink: 0;
 }
 
 .linkBtn:hover {
-  text-decoration: underline;
+  color: var(--accent);
 }
 
-.billsMeta {
-  margin: 4px 0 12px;
-  font-size: 12px;
-  color: var(--text-muted);
+/* charts */
+.chartRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
-.billsList {
+.rangeTabs {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.billRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.billRow:last-child {
-  border-bottom: none;
-}
-
-.billInfo {
-  display: flex;
-  flex-direction: column;
   gap: 2px;
-  min-width: 0;
-}
-
-.billDate {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--accent-magenta);
-  letter-spacing: 0.04em;
-}
-
-.billName {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.billRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
   flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
-.billAmt {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.pillBtn {
-  border: none;
-  background: var(--accent-blue);
-  color: #fff;
-  border-radius: var(--radius-xs);
-  padding: 6px 14px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* trend + mini cards */
-.trendCard {
-  overflow: hidden;
-}
-
-.trendHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-.trendHeader .cardTitle {
-  margin-bottom: 0;
-}
-
-.trendUp,
-.trendDown {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 12px;
-  padding: 4px 9px;
-  border-radius: var(--radius-xs);
-  border: 1px solid transparent;
-}
-
-.trendUp {
-  color: var(--positive);
-  background: rgba(47, 107, 79, 0.14);
-  border-color: rgba(47, 107, 79, 0.3);
-}
-
-.trendDown {
-  color: var(--negative);
-  background: rgba(161, 58, 46, 0.14);
-  border-color: rgba(161, 58, 46, 0.3);
-}
-
-.trendValue {
-  font-family: var(--font-mono);
-  font-size: clamp(18px, 4.5vw, 24px);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-  overflow-wrap: anywhere;
-  margin-bottom: 10px;
-}
-
-.timeframeRow {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-  margin: 0 0 8px;
-}
-
-.timeframeBtn,
-.timeframeActive {
+.rangeTab {
   border: none;
   background: transparent;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 600;
   padding: 5px 8px;
   border-radius: var(--radius-xs);
   cursor: pointer;
 }
 
-.timeframeActive {
-  color: var(--accent-blue);
-  background: rgba(124, 95, 31, 0.14);
+.rangeTab:hover {
+  color: var(--text-primary);
 }
 
-.chartWrap {
-  height: 160px;
-  margin: 0 -4px;
-}
-
-.miniCard {
-  cursor: pointer;
-  padding: 18px 22px;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.miniCard:hover {
-  border-color: var(--border-strong);
+.rangeTabActive {
+  color: var(--text-primary);
   background: var(--surface-3);
 }
 
-.miniHeader {
-  margin-bottom: 10px;
+.chartWrap {
+  height: 120px;
 }
 
-.miniValue {
-  font-family: var(--font-mono);
-  font-size: clamp(16px, 4vw, 21px);
-  font-weight: 700;
-  color: var(--text-primary);
-  overflow-wrap: anywhere;
-  margin-bottom: 4px;
+.chartWrap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.miniPositive {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--positive);
-}
-
-.miniNegative {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--negative);
-}
-
-.miniMuted {
-  font-size: 12px;
+.chartEmpty {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   color: var(--text-muted);
+  font-size: 13px;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.emptyState {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 10px 0;
 }
 
 /* recent transactions */
-.recentList {
+.txList {
   display: flex;
   flex-direction: column;
 }
 
-.recentRow {
-  display: flex;
+.txRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 14px 0;
+  gap: 14px;
+  padding: 11px 0;
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.recentRow:last-child {
+.txRow:last-child {
   border-bottom: none;
 }
 
-.recentLeft {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.recentIcon {
-  width: 38px;
-  height: 38px;
+.txIconWrap {
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
   background: var(--surface-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  flex-shrink: 0;
 }
 
-.recentTitle {
-  font-size: 14px;
-  font-weight: 700;
+.txInfo {
+  min-width: 0;
+}
+
+.txName {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.recentMeta {
-  margin-top: 4px;
+.txMeta {
+  font-size: 11px;
   color: var(--text-muted);
-  font-size: 12px;
-}
-
-.recentActions {
+  margin-top: 2px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.incomeAmount,
-.expenseAmount {
-  font-family: var(--font-mono);
+.consolidated {
+  font-size: 9px;
   font-weight: 700;
-  font-size: 14px;
-}
-
-.incomeAmount {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--positive);
 }
 
-.expenseAmount {
-  color: var(--negative);
+.txTag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
-.actionBtn {
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-3);
+.txAmtPositive,
+.txAmtNegative {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.txAmtPositive { color: var(--positive); }
+.txAmtNegative { color: var(--text-primary); }
+
+/* categories + debts split row */
+.splitRow {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.catRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 12.5px;
+}
+
+.catDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.catName {
+  width: 100px;
+  flex-shrink: 0;
   color: var(--text-secondary);
-  border-radius: var(--radius-xs);
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.actionBtn:hover {
-  border-color: var(--border-strong);
+.catTrack {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.catFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.catAmt {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  width: 76px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.debtRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.debtLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.debtValue {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
-@media (max-width: 1300px) {
-  .tripleGrid {
-    grid-template-columns: 1fr 1fr;
-  }
+.debtPositive {
+  color: var(--positive);
+}
 
-  .stackCol {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
+.debtDivider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 8px 0 12px;
+}
 
-  .stackCol .trendCard {
-    flex: 1 1 100%;
-  }
+.debtNote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
 
-  .stackCol .miniCard {
-    flex: 1 1 220px;
+.debtNote:hover {
+  color: var(--accent);
+}
+
+/* upcoming bills table */
+.billTable {
+  display: flex;
+  flex-direction: column;
+}
+
+.billHead {
+  display: grid;
+  grid-template-columns: 64px 1.6fr 1fr auto;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.billLine {
+  display: grid;
+  grid-template-columns: 64px 1.6fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12.5px;
+}
+
+.billLine:last-child {
+  border-bottom: none;
+}
+
+.billBadge,
+.billBadgeUrgent {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.billBadge { color: var(--text-muted); }
+.billBadgeUrgent { color: var(--negative); }
+
+.billName {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-primary);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.billName svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.billFreq {
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.billAmt {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+@media (max-width: 1200px) {
+  .chartRow,
+  .splitRow {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 900px) {
-  .statsGrid,
-  .tripleGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .stackCol {
-    flex-direction: column;
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -657,14 +496,12 @@
     padding: 18px 16px 24px;
   }
 
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
+  .billHead,
+  .billLine {
+    grid-template-columns: 48px 1fr auto;
   }
 
-  .recentRow {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  .billFreq {
+    display: none;
   }
 }

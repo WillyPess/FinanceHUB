@@ -1,51 +1,49 @@
 :root {
   /* ============================================================
-     THE LEDGER — a household ledger book: dark ink cover (Sidebar)
-     opens onto pale paper pages (everything else). Palette below is
-     hand-verified for contrast (WCAG relative-luminance formula) since
-     this environment has no browser to render/screenshot against.
+     NIGHT BOARD — dense, dark, chart-forward. One accent, hairline
+     borders over drop shadows, boxed cards throughout.
      ============================================================ */
 
-  /* -- page surfaces (paper) -------------------------------------- */
-  --panel-bg: #e8eae0;      /* page background — cool sage-paper, not cream */
-  --surface-1: #1b241f;     /* the COVER only: Sidebar rail + mobile tab bar */
-  --surface-2: #f7f8f2;     /* cards — raised, closer to clean paper */
-  --surface-3: #e2e4d5;     /* chips / tracks / wells — recessed a touch */
-  --surface-hover: #28352c; /* cover hover/active fill (dark, cover-only) */
+  /* -- surfaces ----------------------------------------------- */
+  --panel-bg: #0d0f13;      /* page background */
+  --surface-1: #0d0f13;     /* sidebar rail — flush with the page, split by a border only */
+  --surface-2: #14171d;     /* cards */
+  --surface-3: #191c23;     /* chips / tracks / wells — recessed a touch */
+  --surface-hover: #1d2027; /* hover/active fill */
 
-  --border-subtle: rgba(27, 36, 31, 0.12);
-  --border-strong: rgba(27, 36, 31, 0.24);
+  --border-subtle: #24272f;
+  --border-strong: #33373f;
 
-  --text-primary: #1c231d;
-  --text-secondary: #4b5449;
-  --text-muted: #5c6355;
+  --text-primary: #e9eaee;
+  --text-secondary: #b7bac2;
+  --text-muted: #868b96;
 
-  /* -- the cover's own text (light-on-dark; Sidebar only) ---------- */
-  --cover-text: #f3f1e6;
-  --cover-text-muted: #9ba69b;
-  --cover-accent: #c9a227;
-  --cover-border: rgba(243, 241, 230, 0.14);
+  /* -- accents -------------------------------------------------
+     one primary accent (amber) does the interactive work; a second
+     cool blue exists only for gradients/brand marks, never as a
+     competing call-to-action color. --------------------------- */
+  --accent: #e0a530;
+  --accent-wash: rgba(224, 165, 48, 0.16);
+  --accent-2: #6a8dff;
+  --accent-2-wash: rgba(106, 141, 255, 0.16);
 
-  /* -- accents (names kept stable so every module.css keeps working;
-        values reassigned to the ledger palette) ---------------------- */
-  --accent-blue: #7c5f1f;     /* brass — primary interactive accent */
-  --accent-teal: #2f6b4f;     /* forest — positive / growth */
-  --accent-gold: #9a5220;     /* copper — fixed costs / warm secondary */
-  --accent-magenta: #6b3b63;  /* plum — fourth accent (debts) */
+  --positive: #3fb37f;
+  --positive-wash: rgba(63, 179, 127, 0.16);
+  --negative: #e0615a;
+  --negative-wash: rgba(224, 97, 90, 0.14);
+  --warning: #d9903d;
+  --warning-wash: rgba(217, 144, 61, 0.16);
 
-  --positive: #2f6b4f;
-  --negative: #a13a2e;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 24px 56px rgba(0, 0, 0, 0.5);
 
-  --shadow-card: 0 1px 2px rgba(27, 36, 31, 0.06);
-  --shadow-lg: 0 20px 48px rgba(27, 36, 31, 0.28);
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 7px;
+  --radius-xs: 5px;
 
-  --radius-lg: 10px;
-  --radius-md: 7px;
-  --radius-sm: 4px;
-  --radius-xs: 3px;
-
-  /* -- type: a grotesque workhorse for reading, a true monospace
-        for counting. Numerals never use the display face. ---------- */
-  --font-display: "Libre Franklin", "Segoe UI", sans-serif;
-  --font-mono: "Space Mono", "SFMono-Regular", Consolas, monospace;
+  /* -- type: a clean grotesk for reading, a true monospace for
+        counting. Every figure in the app is set in mono. -------- */
+  --font-display: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 }

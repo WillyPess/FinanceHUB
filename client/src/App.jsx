@@ -28,12 +28,15 @@ export default function App() {
     addDebt,
     updateDebt,
     deleteDebt,
+    settleDebt,
+    unsettleDebt,
     addSubscription,
     updateSubscription,
     deleteSubscription,
     addInvestmentPurchase,
     deleteInvestmentPurchase,
     refreshInvestments,
+    setInvestmentRange,
   } = useFinanceData();
 
   const [page, setPage] = useState("dashboard");
@@ -75,6 +78,14 @@ export default function App() {
     await runSavedAction(() => deleteDebt(id), "Debt removed from database");
   };
 
+  const handleSettleDebt = async (id) => {
+    await runSavedAction(() => settleDebt(id), "Debt paid and added to transactions");
+  };
+
+  const handleUnsettleDebt = async (id) => {
+    await runSavedAction(() => unsettleDebt(id), "Payment undone");
+  };
+
   const handleDeleteSubscription = async (id) => {
     await runSavedAction(() => deleteSubscription(id), "Fixed cost removed from database");
   };
@@ -112,7 +123,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 12, background: "var(--panel-bg)" }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 32, color: "var(--accent-blue)" }}>$</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 32, color: "var(--accent)" }}>$</div>
         <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading FinanceHub...</div>
       </div>
     );
@@ -152,11 +163,11 @@ export default function App() {
                   width: 46,
                   height: 46,
                   borderRadius: "var(--radius-lg)",
-                  background: "linear-gradient(135deg, var(--accent-blue), var(--accent-magenta))",
+                  background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#fff",
+                  color: "#10121a",
                   fontFamily: "var(--font-mono)",
                   fontWeight: 700,
                   fontSize: 17,
@@ -202,9 +213,12 @@ export default function App() {
           {page === "dashboard" && (
             <Dashboard
               data={data}
+              investmentRange={data.investmentRange}
+              onRangeChange={setInvestmentRange}
               onGoToBills={() => setPage("fixed-costs")}
               onGoToInvestments={() => setPage("investments")}
               onGoToDebts={() => setPage("debts")}
+              onGoToTransactions={() => setPage("transactions")}
             />
           )}
           {page === "transactions" && (
@@ -243,12 +257,15 @@ export default function App() {
           {page === "debts" && (
             <Debts
               debts={data.debts}
+              transactions={data.transactions}
               onAdd={() => {
                 setEditing(null);
                 setModal("add-debt");
               }}
               onEdit={openEditDebt}
               onDelete={handleDeleteDebt}
+              onSettle={handleSettleDebt}
+              onUnsettle={handleUnsettleDebt}
             />
           )}
         </main>
@@ -266,7 +283,7 @@ export default function App() {
             gap: 10,
             padding: "12px 16px",
             borderRadius: "var(--radius-md)",
-            border: `1px solid ${saveNotice.type === "success" ? "rgba(47,107,79,0.35)" : "rgba(161,58,46,0.4)"}`,
+            border: `1px solid ${saveNotice.type === "success" ? "rgba(63,179,127,0.35)" : "rgba(224,97,90,0.4)"}`,
             background: "var(--surface-2)",
             color: saveNotice.type === "success" ? "var(--positive)" : "var(--negative)",
             boxShadow: "var(--shadow-lg)",

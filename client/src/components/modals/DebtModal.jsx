@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Icon from "../icons.jsx";
 import s from "./Modal.module.css";
 
 export default function DebtModal({ initial, onSave, onClose }) {
@@ -20,7 +21,7 @@ export default function DebtModal({ initial, onSave, onClose }) {
       <div className={s.modal}>
         <div className={s.header}>
           <h3 className={s.title}>{initial ? "Edit Debt" : "New Debt"}</h3>
-          <button onClick={onClose} className={s.close}>x</button>
+          <button onClick={onClose} className={s.close}><Icon name="close" size={13} /></button>
         </div>
         <div className={s.typeToggle}>
           {[["i-owe", "I Owe"], ["owed", "Owed to Me"]].map(([value, label]) => (

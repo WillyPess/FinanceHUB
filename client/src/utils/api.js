@@ -49,6 +49,8 @@ export const getDebts    = ()      => req("GET",    "/debts");
 export const addDebt     = (data)  => req("POST",   "/debts", data);
 export const updateDebt  = (id, d) => req("PUT",    `/debts/${id}`, d);
 export const deleteDebt  = (id)    => req("DELETE", `/debts/${id}`);
+export const settleDebt   = (id)   => req("POST",   `/debts/${id}/settle`);
+export const unsettleDebt = (id)   => req("POST",   `/debts/${id}/unsettle`);
 
 // Subscriptions
 export const getSubs    = ()      => req("GET",    "/subscriptions");

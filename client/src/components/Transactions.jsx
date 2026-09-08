@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { fmt, fmtDate } from "../utils/formatters.js";
-import { CAT_ICONS, resolveIconGlyph } from "../constants.js";
+import { CAT_ICONS, CAT_COLORS } from "../constants.js";
+import Icon from "./icons.jsx";
 import styles from "./Transactions.module.css";
 
 const FILTERS = [
@@ -38,7 +39,7 @@ export default function Transactions({ transactions, onAdd, onEdit, onDelete }) 
 
       <div className={styles.toolbar}>
         <label className={styles.searchBox}>
-          <span className={styles.searchIcon}>⌕</span>
+          <Icon name="search" size={15} className={styles.searchIcon} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -72,14 +73,20 @@ export default function Transactions({ transactions, onAdd, onEdit, onDelete }) 
         <div className={styles.tableBody}>
           {filtered.map((tx) => {
             const desc = tx.desc || tx.description || "";
+            const color = CAT_COLORS[tx.category] || CAT_COLORS.Other;
             return (
               <div key={tx.id} className={styles.row}>
                 <div className={styles.txCell}>
-                  <span className={styles.txIcon}>{resolveIconGlyph(tx.icon || CAT_ICONS[tx.category])}</span>
-                  <span className={styles.txLabel}>{desc}</span>
+                  <span className={styles.txIcon} style={{ color }}>
+                    <Icon name={tx.icon || CAT_ICONS[tx.category] || "package"} size={17} />
+                  </span>
+                  <div className={styles.txTextCol}>
+                    <span className={styles.txLabel}>{desc}</span>
+                    {tx.debt_id && <span className={styles.consolidatedBadge}>Consolidated</span>}
+                  </div>
                 </div>
                 <div>
-                  <span className={styles.badge}>{tx.category}</span>
+                  <span className={styles.badge} style={{ background: `${color}26`, color }}>{tx.category}</span>
                 </div>
                 <div className={styles.dateCell}>{fmtDate(tx.date)}</div>
                 <div className={styles.amountCell}>
@@ -99,7 +106,11 @@ export default function Transactions({ transactions, onAdd, onEdit, onDelete }) 
             );
           })}
 
-          {filtered.length === 0 && <div className={styles.empty}>No transactions found.</div>}
+          {filtered.length === 0 && (
+            <div className={styles.empty}>
+              {transactions.length === 0 ? "No transactions yet — add your first one to get started." : "No transactions match this filter."}
+            </div>
+          )}
         </div>
       </section>
     </div>

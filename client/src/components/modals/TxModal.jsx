@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CAT_ICONS, TX_CATS } from "../../constants.js";
+import Icon from "../icons.jsx";
 import s from "./Modal.module.css";
 
 export default function TxModal({ initial, onSave, onClose }) {
@@ -21,7 +22,7 @@ export default function TxModal({ initial, onSave, onClose }) {
       <div className={s.modal}>
         <div className={s.header}>
           <h3 className={s.title}>{initial ? "Edit Transaction" : "New Transaction"}</h3>
-          <button onClick={onClose} className={s.close}>x</button>
+          <button onClick={onClose} className={s.close}><Icon name="close" size={13} /></button>
         </div>
         <div className={s.typeToggle}>
           {["expense", "income"].map((t) => (

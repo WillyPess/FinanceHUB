@@ -123,6 +123,16 @@ export function useFinanceData() {
     await loadAll();
   };
 
+  const settleDebt = async (id) => {
+    await api.settleDebt(id);
+    await loadAll();
+  };
+
+  const unsettleDebt = async (id) => {
+    await api.unsettleDebt(id);
+    await loadAll();
+  };
+
   const addSubscription = async (item) => {
     await api.addSub(item);
     await loadAll();
@@ -176,6 +186,8 @@ export function useFinanceData() {
     addDebt,
     updateDebt,
     deleteDebt,
+    settleDebt,
+    unsettleDebt,
     addSubscription,
     updateSubscription,
     deleteSubscription,

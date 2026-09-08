@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { fmt, fmtDate } from "../utils/formatters.js";
-import { resolveIconGlyph } from "../constants.js";
+import Icon from "./icons.jsx";
 import styles from "./Subscriptions.module.css";
 
 const FREQ_MONTHS = { weekly: 1 / 4.33, monthly: 1, yearly: 12 };
-const STATUS_COLOR = { active: "var(--accent-teal)", paused: "var(--accent-gold)", cancelled: "var(--negative)" };
+const STATUS_TONE = { active: "positive", paused: "warning", cancelled: "negative" };
 const STATUS_LABEL = { active: "Active", paused: "Paused", cancelled: "Cancelled" };
 
 export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }) {
@@ -42,14 +42,14 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
           <h1 className={styles.title}>Fixed Costs</h1>
           <p className={styles.subtitle}>Manage subscriptions, bills and recurring payments</p>
         </div>
-        <button onClick={onAdd} className={styles.addBtn}>+ Add Fixed Cost</button>
+        <button type="button" onClick={onAdd} className={styles.addBtn}>+ Add Fixed Cost</button>
       </div>
 
       <div className={styles.summaryGrid}>
-        <SummaryCard label="Monthly Fixed" value={fmt(monthlyTotal)} hint="All" color="var(--accent-blue)" />
-        <SummaryCard label="Bills / Month" value={fmt(monthlyBills)} hint="Bills" color="var(--accent-magenta)" />
-        <SummaryCard label="Subscriptions" value={subscriptionsOnly.length} hint="Subs" color="var(--accent-teal)" />
-        <SummaryCard label="Bills" value={billsOnly.length} hint="Acct" color="var(--accent-gold)" />
+        <SummaryCard label="Monthly Fixed" value={fmt(monthlyTotal)} hint="All" />
+        <SummaryCard label="Bills / Month" value={fmt(monthlyBills)} hint="Bills" />
+        <SummaryCard label="Subscriptions" value={subscriptionsOnly.length} hint="Subs" />
+        <SummaryCard label="Bills" value={billsOnly.length} hint="Acct" />
       </div>
 
       <div className={styles.bodyGrid}>
@@ -63,8 +63,8 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
 
             return (
               <div key={status}>
-                <div className={styles.groupLabel} style={{ color: STATUS_COLOR[status] }}>
-                  <span className={styles.statusDot} style={{ background: STATUS_COLOR[status] }} />
+                <div className={`${styles.groupLabel} ${styles[STATUS_TONE[status]]}`}>
+                  <span className={`${styles.statusDot} ${styles[`${STATUS_TONE[status]}Dot`]}`} />
                   {STATUS_LABEL[status]} ({group.length})
                 </div>
                 {group.map((item) => (
@@ -75,7 +75,7 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
           })}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className={styles.sideCol}>
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>Upcoming Charges</h3>
             {upcoming.length === 0 && <p className={styles.empty}>No upcoming bills.</p>}
@@ -89,22 +89,15 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
 
               return (
                 <div key={item.id} className={styles.upcomingRow}>
-                  <span className={styles.subIcon}>{resolveIconGlyph(item.icon || "package")}</span>
+                  <span className={styles.subIcon}><Icon name={item.icon || "package"} size={16} /></span>
                   <div className={styles.upcomingInfo}>
                     <div className={styles.upcomingName}>{item.name}</div>
-                    <div className={styles.upcomingDate}>{item.kind === "bill" ? "Bill" : "Subscription"}</div>
-                    <div className={styles.upcomingDate}>{nextBilling ? fmtDate(nextBilling) : "-"}</div>
+                    <div className={styles.upcomingDate}>{item.kind === "bill" ? "Bill" : "Subscription"} &middot; {nextBilling ? fmtDate(nextBilling) : "-"}</div>
                   </div>
                   <div className={styles.upcomingRight}>
                     <div className={styles.upcomingAmt}>{fmt(item.amount)}</div>
                     {daysLeft !== null && (
-                      <div
-                        className={styles.daysTag}
-                        style={{
-                          background: urgent ? "rgba(161,58,46,0.16)" : "var(--surface-3)",
-                          color: urgent ? "var(--negative)" : "var(--text-muted)",
-                        }}
-                      >
+                      <div className={urgent ? styles.daysTagUrgent : styles.daysTag}>
                         {daysLeft <= 0 ? "Today" : `${daysLeft}d`}
                       </div>
                     )}
@@ -122,13 +115,13 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
                 const pct = monthlyTotal > 0 ? (monthly / monthlyTotal) * 100 : 0;
 
                 return (
-                  <div key={item.id} style={{ marginBottom: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4, gap: 8 }}>
-                      <span style={{ color: "var(--text-secondary)" }}>{item.icon} {item.name} | {item.kind === "bill" ? "Bill" : "Subscription"}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>{fmt(monthly)}/mo ({pct.toFixed(0)}%)</span>
+                  <div key={item.id} className={styles.breakdownRow}>
+                    <div className={styles.breakdownLabelRow}>
+                      <span className={styles.breakdownName}>{item.name}</span>
+                      <span className={styles.breakdownAmt}>{fmt(monthly)}/mo ({pct.toFixed(0)}%)</span>
                     </div>
-                    <div style={{ height: 6, background: "var(--surface-3)", borderRadius: "var(--radius-xs)" }}>
-                      <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent-blue)", borderRadius: "var(--radius-xs)", transition: "width 0.5s" }} />
+                    <div className={styles.breakdownTrack}>
+                      <div className={styles.breakdownFill} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -138,7 +131,7 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
 
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>Overview</h3>
-            <div style={{ display: "grid", gap: 12 }}>
+            <div className={styles.overviewList}>
               <OverviewRow label="Active items" value={active.length} />
               <OverviewRow label="Paused items" value={paused.length} />
               <OverviewRow label="Subscription items" value={subscriptionsOnly.length} />
@@ -151,25 +144,23 @@ export default function Subscriptions({ subscriptions, onAdd, onEdit, onDelete }
   );
 }
 
-function SummaryCard({ label, value, hint, color }) {
+function SummaryCard({ label, value, hint }) {
   return (
-    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-card)", padding: 19, minWidth: 0 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 12 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-muted)" }}>{label.toUpperCase()}</div>
-        <div style={{ minWidth: 36, height: 30, padding: "0 8px", background: "var(--surface-3)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-xs)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-secondary)", flexShrink: 0 }}>
-          {hint}
-        </div>
+    <div className={styles.summaryCard}>
+      <div className={styles.summaryTop}>
+        <div className={styles.summaryLabel}>{label}</div>
+        <div className={styles.summaryHint}>{hint}</div>
       </div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(17px, 4vw, 23px)", fontWeight: 700, color, overflowWrap: "anywhere" }}>{value}</div>
+      <div className={styles.summaryValue}>{value}</div>
     </div>
   );
 }
 
 function OverviewRow({ label, value }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-subtle)", paddingBottom: 10 }}>
-      <span style={{ color: "var(--text-muted)", fontSize: 14 }}>{label}</span>
-      <strong style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>{value}</strong>
+    <div className={styles.overviewRow}>
+      <span className={styles.overviewLabel}>{label}</span>
+      <strong className={styles.overviewValue}>{value}</strong>
     </div>
   );
 }
@@ -180,7 +171,7 @@ function SubRow({ sub, onEdit, onDelete }) {
   return (
     <div className={styles.subRow}>
       <div className={styles.subMain}>
-        <span className={styles.subIcon}>{resolveIconGlyph(sub.icon || "package")}</span>
+        <span className={styles.subIcon}><Icon name={sub.icon || "package"} size={16} /></span>
         <div className={styles.subInfo}>
           <div className={styles.subName}>{sub.name}</div>
           <div className={styles.subMeta}>

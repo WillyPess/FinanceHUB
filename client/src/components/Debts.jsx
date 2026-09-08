@@ -9,8 +9,12 @@ const FILTERS = [
   { key: "owed", label: "Owed to Me" },
 ];
 
-export default function Debts({ debts, onAdd, onEdit, onDelete }) {
+export default function Debts({ debts, transactions = [], onAdd, onEdit, onDelete, onSettle, onUnsettle }) {
   const [filter, setFilter] = useState("all");
+
+  const consolidatedByDebt = useMemo(() => {
+    return new Map(transactions.filter((tx) => tx.debt_id).map((tx) => [tx.debt_id, tx]));
+  }, [transactions]);
 
   const normalized = useMemo(() => {
     return debts.map((debt) => {
@@ -22,9 +26,9 @@ export default function Debts({ debts, onAdd, onEdit, onDelete }) {
       if (remaining === 0) status = "paid";
       else if (debt.paid > 0) status = "partial";
 
-      return { ...debt, dueDate, remaining, direction, status };
+      return { ...debt, dueDate, remaining, direction, status, linkedTx: consolidatedByDebt.get(debt.id) };
     });
-  }, [debts]);
+  }, [debts, consolidatedByDebt]);
 
   const visible = normalized.filter((debt) => {
     if (filter === "pending") return debt.status !== "paid";
@@ -91,8 +95,21 @@ export default function Debts({ debts, onAdd, onEdit, onDelete }) {
             </div>
 
             <div className={styles.metaRow}>Due {fmtDate(debt.dueDate)}</div>
+            {debt.linkedTx && (
+              <div className={styles.settledRow}>Settled {fmtDate(debt.linkedTx.date)} &middot; in Transactions</div>
+            )}
 
             <div className={styles.actions}>
+              {debt.status !== "paid" && (
+                <button type="button" onClick={() => onSettle(debt.id)} className={styles.payBtn}>
+                  Mark Paid
+                </button>
+              )}
+              {debt.status === "paid" && debt.linkedTx && (
+                <button type="button" onClick={() => onUnsettle(debt.id)} className={styles.undoBtn}>
+                  Undo
+                </button>
+              )}
               <button type="button" onClick={() => onEdit(debt)} className={styles.iconBtn}>
                 Edit
               </button>

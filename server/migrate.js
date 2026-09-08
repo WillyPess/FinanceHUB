@@ -12,6 +12,7 @@ const SCHEMA = `
     date        TEXT,
     amount      REAL NOT NULL,
     type        TEXT CHECK(type IN ('income','expense')) NOT NULL,
+    debt_id     TEXT,
     created_at  TEXT DEFAULT (datetime('now'))
   );
 
@@ -122,6 +123,21 @@ async function ensureDebtDirectionColumn() {
   }
 }
 
+// Links a transaction back to the debt it settled, so a consolidated payment can be
+// shown as such on the transactions list and undone from the debts page. The partial
+// unique index is what actually guarantees one consolidated transaction per debt —
+// the check in the settle route can't, since two racing requests can both read the
+// debt as unpaid before either write lands.
+async function ensureTransactionDebtColumn() {
+  const columns = await db.all("PRAGMA table_info(transactions)");
+  if (!columns.some((column) => column.name === "debt_id")) {
+    await db.exec("ALTER TABLE transactions ADD COLUMN debt_id TEXT");
+  }
+  await db.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_debt_id ON transactions(debt_id) WHERE debt_id IS NOT NULL"
+  );
+}
+
 async function ensureUserIdColumn(table) {
   const columns = await db.all(`PRAGMA table_info(${table})`);
   if (!columns.some((column) => column.name === "user_id")) {
@@ -134,6 +150,7 @@ async function migrate() {
   await ensureSubscriptionKind();
   await ensureInvestmentLotColumns();
   await ensureDebtDirectionColumn();
+  await ensureTransactionDebtColumn();
   await ensureUserIdColumn("transactions");
   await ensureUserIdColumn("debts");
   await ensureUserIdColumn("subscriptions");

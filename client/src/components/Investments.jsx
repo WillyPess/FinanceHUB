@@ -10,6 +10,7 @@ import {
   fmtUsdFromAud,
 } from "../utils/formatters.js";
 import { resolveIconGlyph } from "../constants.js";
+import Icon from "./icons.jsx";
 import styles from "./Investments.module.css";
 
 export default function Investments({ investments, apiHealth, onAdd, onAddPurchase, onDeletePurchase, onRefresh }) {
@@ -106,6 +107,7 @@ export default function Investments({ investments, apiHealth, onAdd, onAddPurcha
         </div>
         <div className={styles.headerActions}>
           <button type="button" onClick={handleRefresh} className={styles.refreshBtn} disabled={refreshing}>
+            <Icon name="refresh" size={15} style={refreshing ? { animation: "spin 0.8s linear infinite" } : undefined} />
             {refreshing ? "Refreshing..." : "Refresh Prices"}
           </button>
           <button type="button" onClick={onAdd} className={styles.addBtn}>
@@ -173,6 +175,7 @@ export default function Investments({ investments, apiHealth, onAdd, onAddPurcha
                 onClick={() => setExpanded((prev) => ({ ...prev, [asset.id]: !isOpen }))}
               >
                 <div className={styles.assetMain}>
+                  <Icon name="chevronDown" size={15} className={styles.expandChevron} style={{ transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)" }} />
                   <span className={styles.assetIcon}>{resolveIconGlyph(asset.icon)}</span>
                   <div>
                     <div className={styles.assetTop}>

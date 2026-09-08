@@ -1,9 +1,9 @@
 .sidebar {
-  width: 260px;
+  width: 240px;
   min-height: 100%;
   background: var(--surface-1);
-  border-right: 1px solid var(--cover-border);
-  padding: 22px 16px 18px;
+  border-right: 1px solid var(--border-subtle);
+  padding: 20px 14px 18px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -12,38 +12,38 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 12px 26px;
+  gap: 12px;
+  padding: 8px 10px 24px;
 }
 
 .brandMark {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-magenta));
-  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #10121a;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 22px;
+  font-size: 17px;
   line-height: 1;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .brandName {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: var(--cover-text);
+  color: var(--text-primary);
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 0 24px;
+  gap: 2px;
+  padding: 4px 0 20px;
   flex: 1;
 }
 
@@ -51,52 +51,55 @@
   border: none;
   background: transparent;
   border-radius: var(--radius-sm);
-  padding: 13px 16px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  color: var(--cover-text-muted);
-  font-size: 14px;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 13.5px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .navBtn:hover {
-  background: var(--surface-hover);
-  color: var(--cover-text);
+  background: var(--surface-2);
+  color: var(--text-primary);
 }
 
 .active {
-  background: var(--surface-hover);
-  color: var(--cover-accent);
-  box-shadow: inset 3px 0 0 var(--cover-accent);
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.active .navIcon {
+  color: var(--accent);
 }
 
 .navIcon {
-  width: 22px;
-  height: 22px;
   flex: 0 0 auto;
 }
 
 .userCard {
   margin-top: auto;
-  border-top: 1px solid var(--cover-border);
-  padding: 20px 10px 4px;
+  border-top: 1px solid var(--border-subtle);
+  padding: 18px 8px 4px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
 }
 
 .avatar {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
-  background: var(--surface-hover);
-  color: var(--cover-accent);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
   font-family: var(--font-mono);
   font-weight: 700;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,17 +112,17 @@
 }
 
 .userName {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--cover-text);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .userEmail {
-  font-size: 12px;
-  color: var(--cover-text-muted);
+  font-size: 11px;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -128,8 +131,11 @@
 .logoutBtn {
   border: none;
   background: transparent;
-  color: var(--cover-text-muted);
-  font-size: 19px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   cursor: pointer;
   transition: color 0.15s ease;
 }
@@ -138,8 +144,7 @@
   color: var(--negative);
 }
 
-/* mobile: collapse rail into a fixed bottom tab bar, like a native app —
-   the cover's bottom edge, still ink-dark against the paper page above it */
+/* mobile: collapse the rail into a fixed bottom tab bar */
 @media (max-width: 900px) {
   .sidebar {
     position: fixed;
@@ -149,10 +154,10 @@
     width: 100%;
     min-height: auto;
     border-right: none;
-    border-top: 1px solid var(--cover-border);
+    border-top: 1px solid var(--border-subtle);
     border-radius: 0;
     padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -4px 16px rgba(27, 36, 31, 0.14);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
     z-index: 100;
   }
 
@@ -176,11 +181,10 @@
     text-align: center;
     flex: 1;
     min-width: 0;
-    border-radius: var(--radius-sm);
   }
 
   .active {
-    box-shadow: inset 0 -3px 0 var(--cover-accent);
+    box-shadow: inset 0 -3px 0 var(--accent);
   }
 
   .navBtn span {
@@ -188,11 +192,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .navIcon {
-    width: 20px;
-    height: 20px;
   }
 }
 

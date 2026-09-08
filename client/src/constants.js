@@ -11,56 +11,35 @@ export const CAT_ICONS = {
   Freelance: "work",
   Investment: "chart",
   Subscriptions: "tv",
+  Debt: "exchange",
   Other: "package",
 };
 
-// Light-paper categorical "ink wheel" — re-verified for the ledger palette
-// (hand-computed WCAG contrast, ~4.1-7.1:1 against panel-bg #e8eae0 and
-// surface-2 #f7f8f2; the prior dark-surface set fell to ~3:1 here and read
-// washed out, so it was re-hued rather than reused as-is).
-// Fixed hue-to-category mapping so color always follows category identity, never sort rank.
+// Categorical "data ink" for the expense donut and category chips — tuned
+// for legibility on the Night Board dark surfaces (#14171d cards, #0d0f13
+// page). Income-side categories (Salary, Freelance, Investment) reuse an
+// expense hue since the two sets never render in the same chart together.
 export const CAT_COLORS = {
-  Housing: "#3d5a99",
-  Food: "#2f6b4f",
-  Shopping: "#9a5220",
-  Utilities: "#6b7233",
-  Entertainment: "#6b5ca0",
-  Transport: "#a13a2e",
-  Health: "#95435a",
-  Subscriptions: "#8a6a1e",
-  Salary: "#2f6b4f",
-  Freelance: "#3d5a99",
-  Investment: "#6b5ca0",
-  Other: "#5c6355",
+  Housing: "#6a8dff",
+  Food: "#e0a530",
+  Shopping: "#e0615a",
+  Utilities: "#9b8fd4",
+  Entertainment: "#e0709e",
+  Transport: "#4fc4c9",
+  Health: "#5bc9e0",
+  Subscriptions: "#c9a24c",
+  Debt: "#3fb37f",
+  Salary: "#3fb37f",
+  Freelance: "#6a8dff",
+  Investment: "#e0709e",
+  Other: "#7d8290",
 };
 
 export const TX_CATS = Object.keys(CAT_ICONS);
 
-export const ICON_GLYPHS = {
-  food: "🍔",
-  car: "🚗",
-  home: "🏠",
-  health: "💊",
-  game: "🎮",
-  book: "📚",
-  cart: "🛍️",
-  power: "⚡",
-  salary: "💰",
-  work: "💼",
-  chart: "📈",
-  tv: "📺",
-  package: "📦",
-  design: "💻",
-  internet: "🌐",
-  phone: "📱",
-  water: "💧",
-  fire: "🔥",
-  fitness: "🏋️",
-  shield: "🛡️",
-  building: "🏢",
-  receipt: "🧾",
-  music: "🎵",
-  tickets: "🎟️",
+// Crypto tickers stay as text badges, not icons — a monospace symbol in a
+// bordered box reads as a real exchange ticker and needs no glyph.
+export const TICKER_GLYPHS = {
   btc: "₿",
   eth: "Ξ",
   bnb: "BNB",
@@ -73,8 +52,8 @@ export const ICON_GLYPHS = {
 };
 
 export function resolveIconGlyph(icon) {
-  if (!icon) return "📦";
-  return ICON_GLYPHS[icon] || icon;
+  if (!icon) return "?";
+  return TICKER_GLYPHS[icon] || icon.slice(0, 4).toUpperCase();
 }
 
 export const SUB_CATS = [
@@ -124,3 +103,5 @@ export const INVESTMENT_CATALOG = [
 ];
 
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export const TREND_RANGES = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y", "MAX"];

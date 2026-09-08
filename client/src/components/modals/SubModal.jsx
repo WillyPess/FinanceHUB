@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { SUB_CATS, SUB_CAT_ICONS } from "../../constants.js";
+import Icon from "../icons.jsx";
 import s from "./Modal.module.css";
+
+const ICON_OPTIONS = [...new Set(Object.values(SUB_CAT_ICONS))];
 
 export default function SubModal({ initial, onSave, onClose }) {
   const today = new Date().toISOString().slice(0, 10);
@@ -24,31 +27,18 @@ export default function SubModal({ initial, onSave, onClose }) {
       <div className={s.modal}>
         <div className={s.header}>
           <h3 className={s.title}>{initial ? "Edit Fixed Cost" : "New Fixed Cost"}</h3>
-          <button onClick={onClose} className={s.close}>x</button>
+          <button onClick={onClose} className={s.close}><Icon name="close" size={13} /></button>
         </div>
 
         <div className={s.field}>
           <label className={s.label}>Type</label>
-          <div style={{ display: "flex", gap: 8 }}>
-            {[
-              ["subscription", "Subscription"],
-              ["bill", "Bill"],
-            ].map(([value, label]) => (
+          <div className={s.segmentRow}>
+            {[["subscription", "Subscription"], ["bill", "Bill"]].map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => set("kind", value)}
-                style={{
-                  flex: 1,
-                  padding: "10px 8px",
-                  border: `2px solid ${f.kind === value ? "var(--accent-teal)" : "var(--border-subtle)"}`,
-                  borderRadius: "var(--radius-sm)",
-                  background: f.kind === value ? "rgba(47,107,79,0.14)" : "var(--panel-bg)",
-                  color: f.kind === value ? "var(--accent-teal)" : "var(--text-muted)",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
+                className={`${s.segmentBtn} ${f.kind === value ? s.segmentBtnActive : ""}`}
               >
                 {label}
               </button>
@@ -56,26 +46,14 @@ export default function SubModal({ initial, onSave, onClose }) {
           </div>
         </div>
 
-        <div className={s.grid2} style={{ marginBottom: 14 }}>
-          <div className={s.field} style={{ marginBottom: 0 }}>
-            <label className={s.label}>Icon</label>
-            <input
-              value={f.icon}
-              onChange={(e) => set("icon", e.target.value)}
-              className={s.input}
-              style={{ textAlign: "center", fontSize: 20 }}
-              maxLength={16}
-            />
-          </div>
-          <div className={s.field} style={{ marginBottom: 0 }}>
-            <label className={s.label}>{f.kind === "bill" ? "Bill Name" : "Name"}</label>
-            <input
-              value={f.name}
-              onChange={(e) => set("name", e.target.value)}
-              placeholder={f.kind === "bill" ? "Rent, Electricity..." : "Netflix, Spotify..."}
-              className={s.input}
-            />
-          </div>
+        <div className={s.field}>
+          <label className={s.label}>{f.kind === "bill" ? "Bill Name" : "Name"}</label>
+          <input
+            value={f.name}
+            onChange={(e) => set("name", e.target.value)}
+            placeholder={f.kind === "bill" ? "Rent, Electricity..." : "Netflix, Spotify..."}
+            className={s.input}
+          />
         </div>
 
         <div className={s.grid2} style={{ marginBottom: 14 }}>
@@ -104,6 +82,23 @@ export default function SubModal({ initial, onSave, onClose }) {
           </div>
         </div>
 
+        <div className={s.field}>
+          <label className={s.label}>Icon</label>
+          <div className={s.iconGrid}>
+            {ICON_OPTIONS.map((iconName) => (
+              <button
+                key={iconName}
+                type="button"
+                onClick={() => set("icon", iconName)}
+                className={`${s.iconOption} ${f.icon === iconName ? s.iconOptionActive : ""}`}
+                title={iconName}
+              >
+                <Icon name={iconName} size={16} />
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className={s.grid2} style={{ marginBottom: 14 }}>
           <div className={s.field} style={{ marginBottom: 0 }}>
             <label className={s.label}>Amount ($)</label>
@@ -117,28 +112,13 @@ export default function SubModal({ initial, onSave, onClose }) {
 
         <div className={s.field}>
           <label className={s.label}>Status</label>
-          <div style={{ display: "flex", gap: 8 }}>
-            {[
-              ["active", "Active", "rgba(47,107,79,0.14)", "var(--accent-teal)"],
-              ["paused", "Paused", "rgba(154,82,32,0.16)", "var(--accent-gold)"],
-              ["cancelled", "Cancelled", "rgba(161,58,46,0.14)", "var(--negative)"],
-            ].map(([value, label, bg, color]) => (
+          <div className={s.segmentRow}>
+            {[["active", "Active"], ["paused", "Paused"], ["cancelled", "Cancelled"]].map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => set("status", value)}
-                style={{
-                  flex: 1,
-                  padding: "8px 4px",
-                  border: `2px solid ${f.status === value ? color : "var(--border-subtle)"}`,
-                  borderRadius: "var(--radius-sm)",
-                  background: f.status === value ? bg : "var(--panel-bg)",
-                  color: f.status === value ? color : "var(--text-muted)",
-                  fontWeight: 700,
-                  fontSize: 11,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
+                className={`${s.segmentBtn} ${f.status === value ? s.segmentBtnActive : ""}`}
               >
                 {label}
               </button>

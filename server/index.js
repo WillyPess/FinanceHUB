@@ -666,7 +666,90 @@ async function start() {
     res.json({ ...row, dueDate: row.due_date });
   });
 
+  // Settles a debt in full and consolidates it into the ledger: the money actually
+  // moved, so it becomes a real transaction. Direction decides the sign — paying off
+  // what you owe is an expense, collecting what you're owed is income.
+  app.post("/api/debts/:id/settle", async (req, res) => {
+    const debt = await db.get("SELECT * FROM debts WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    if (!debt) {
+      return res.status(404).json({ error: "Debt not found." });
+    }
+
+    const remaining = Math.max(debt.total - (debt.paid || 0), 0);
+    if (remaining <= 0) {
+      return res.status(400).json({ error: "Debt is already settled." });
+    }
+
+    const existing = await db.get("SELECT id FROM transactions WHERE debt_id = ? AND user_id = ?", [debt.id, req.user.id]);
+    if (existing) {
+      return res.status(409).json({ error: "Debt has already been consolidated." });
+    }
+
+    const isIncoming = debt.direction === "owed";
+    const txId = Date.now().toString();
+    const txDate = new Date().toISOString().slice(0, 10);
+    const description = `${isIncoming ? "Debt received" : "Debt paid"}: ${debt.creditor}`;
+
+    try {
+      await db.transaction([
+        {
+          sql: "UPDATE debts SET paid = total WHERE id = ? AND user_id = ?",
+          args: [debt.id, req.user.id],
+        },
+        {
+          sql: "INSERT INTO transactions (id, user_id, icon, description, category, date, amount, type, debt_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          args: [txId, req.user.id, "debt", description, "Debt", txDate, remaining, isIncoming ? "income" : "expense", debt.id],
+        },
+      ]);
+    } catch (error) {
+      // The unique index on debt_id rejects a second consolidation — the outcome when
+      // two settle requests race past the check above.
+      if (String(error?.message || "").includes("UNIQUE constraint failed")) {
+        return res.status(409).json({ error: "Debt has already been consolidated." });
+      }
+      throw error;
+    }
+
+    const updatedDebt = await db.get("SELECT * FROM debts WHERE id = ? AND user_id = ?", [debt.id, req.user.id]);
+    const transaction = await db.get("SELECT * FROM transactions WHERE id = ? AND user_id = ?", [txId, req.user.id]);
+    res.json({
+      debt: { ...updatedDebt, dueDate: updatedDebt.due_date },
+      transaction: { ...transaction, desc: transaction.description },
+    });
+  });
+
+  // Reverses a settlement: drops the consolidated transaction and rolls the debt back
+  // to what was outstanding before it.
+  app.post("/api/debts/:id/unsettle", async (req, res) => {
+    const debt = await db.get("SELECT * FROM debts WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    if (!debt) {
+      return res.status(404).json({ error: "Debt not found." });
+    }
+
+    const transaction = await db.get("SELECT * FROM transactions WHERE debt_id = ? AND user_id = ?", [debt.id, req.user.id]);
+    if (!transaction) {
+      return res.status(404).json({ error: "No consolidated transaction found for this debt." });
+    }
+
+    await db.transaction([
+      {
+        sql: "DELETE FROM transactions WHERE id = ? AND user_id = ?",
+        args: [transaction.id, req.user.id],
+      },
+      {
+        sql: "UPDATE debts SET paid = MAX(total - ?, 0) WHERE id = ? AND user_id = ?",
+        args: [transaction.amount, debt.id, req.user.id],
+      },
+    ]);
+
+    const updatedDebt = await db.get("SELECT * FROM debts WHERE id = ? AND user_id = ?", [debt.id, req.user.id]);
+    res.json({ debt: { ...updatedDebt, dueDate: updatedDebt.due_date } });
+  });
+
   app.delete("/api/debts/:id", async (req, res) => {
+    // Keep any consolidated transaction — the money did move — but unlink it so it
+    // doesn't point at a debt that no longer exists.
+    await db.run("UPDATE transactions SET debt_id = NULL WHERE debt_id = ? AND user_id = ?", [req.params.id, req.user.id]);
     const result = await db.run("DELETE FROM debts WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
     if (!result.changes) {
       return res.status(404).json({ error: "Debt not found." });
