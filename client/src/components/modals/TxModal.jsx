@@ -3,15 +3,19 @@ import { CAT_ICONS, TX_CATS } from "../../constants.js";
 import Icon from "../icons.jsx";
 import s from "./Modal.module.css";
 
-export default function TxModal({ initial, onSave, onClose }) {
+export default function TxModal({ initial, prefill, onSave, onClose }) {
   const today = new Date().toISOString().slice(0, 10);
+  // `prefill` seeds a brand-new transaction (e.g. logging an asset's income)
+  // without switching the modal into edit mode the way `initial` does.
+  const seed = initial || prefill || {};
   const [f, setF] = useState({
-    type: initial?.type || "expense",
-    amount: initial?.amount?.toString() || "",
-    category: initial?.category || "Food",
-    desc: initial?.desc || initial?.description || "",
-    date: initial?.date || today,
-    icon: initial?.icon || "",
+    type: seed.type || "expense",
+    amount: seed.amount?.toString() || "",
+    category: seed.category || "Food",
+    desc: seed.desc || seed.description || "",
+    date: seed.date || today,
+    icon: seed.icon || "",
+    assetId: seed.assetId || seed.asset_id || null,
     id: initial?.id,
   });
 
@@ -24,6 +28,11 @@ export default function TxModal({ initial, onSave, onClose }) {
           <h3 className={s.title}>{initial ? "Edit Transaction" : "New Transaction"}</h3>
           <button onClick={onClose} className={s.close}><Icon name="close" size={13} /></button>
         </div>
+        {(prefill?.assetName || f.assetId) && (
+          <div className={s.field} style={{ marginBottom: 12, color: "var(--text-muted)", fontSize: 12 }}>
+            Linked to {prefill?.assetName || "asset"}
+          </div>
+        )}
         <div className={s.typeToggle}>
           {["expense", "income"].map((t) => (
             <button

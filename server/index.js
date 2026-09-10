@@ -572,6 +572,125 @@ function buildSyntheticTimeline(rangeConfig) {
   return points;
 }
 
+// ---- Assets ------------------------------------------------------------
+
+// Income and recurring costs can each be quoted on their own cadence; the assets
+// view puts them on one axis by normalising every amount to a weekly equivalent
+// before comparing or summing.
+const WEEKLY_FROM_FREQUENCY = { daily: 7, weekly: 1, monthly: 12 / 52, yearly: 1 / 52 };
+const ASSET_RENEWAL_WINDOW_DAYS = 30;
+
+const round2 = (n) => Number((Number(n) || 0).toFixed(2));
+
+function weeklyEquivalent(amount, frequency) {
+  const factor = WEEKLY_FROM_FREQUENCY[frequency] ?? WEEKLY_FROM_FREQUENCY.weekly;
+  return (Number(amount) || 0) * factor;
+}
+
+// Classifies a renewal due date against today: "overdue" if it's past, "soon"
+// inside the 30-day window, "ok" beyond it, null when there's no date.
+function renewalStatus(dateStr) {
+  if (!dateStr) return { status: null, days: null };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(target.getTime())) return { status: null, days: null };
+  const days = Math.round((target - today) / 86400000);
+  let status = "ok";
+  if (days < 0) status = "overdue";
+  else if (days <= ASSET_RENEWAL_WINDOW_DAYS) status = "soon";
+  return { status, days };
+}
+
+// snake_case row -> the camelCase shape the client forms expect, raw columns kept.
+function serializeAsset(row) {
+  return {
+    ...row,
+    incomeAmount: row.income_amount,
+    incomeFrequency: row.income_frequency,
+    purchasePrice: row.purchase_price,
+    purchaseDate: row.purchase_date,
+  };
+}
+
+function serializeRenewal(row) {
+  return { ...row, dueDate: row.due_date, ...renewalStatus(row.due_date) };
+}
+
+// Rolls an asset's linked ledger + active recurring costs into the numbers the
+// assets screen shows: lifetime cash in/out and the weekly-equivalent margin.
+function buildAssetStats(asset, { income = 0, expenseTx = 0, recurringCostTotal = 0, weeklyRecurringCost = 0 }) {
+  const totalReceived = Number(income) || 0;
+  const totalSpent = (Number(expenseTx) || 0) + (Number(recurringCostTotal) || 0);
+  const weeklyEquivalentIncome = weeklyEquivalent(asset.income_amount, asset.income_frequency);
+  return {
+    totalReceived: round2(totalReceived),
+    totalSpent: round2(totalSpent),
+    totalExpenses: round2(expenseTx),
+    recurringCostTotal: round2(recurringCostTotal),
+    weeklyRecurringCost: round2(weeklyRecurringCost),
+    weeklyEquivalentIncome: round2(weeklyEquivalentIncome),
+    estWeeklyNet: round2(weeklyEquivalentIncome - weeklyRecurringCost),
+    netProfit: round2(totalReceived - totalSpent),
+  };
+}
+
+async function getAssetsPayload(userId) {
+  const assets = await db.all("SELECT * FROM assets WHERE user_id = ? ORDER BY created_at DESC", [userId]);
+  if (!assets.length) return [];
+
+  const txAgg = await db.all(
+    `SELECT asset_id, type, SUM(amount) AS total
+       FROM transactions
+      WHERE user_id = ? AND asset_id IS NOT NULL
+      GROUP BY asset_id, type`,
+    [userId]
+  );
+  const subAgg = await db.all(
+    `SELECT asset_id, amount, frequency
+       FROM subscriptions
+      WHERE user_id = ? AND asset_id IS NOT NULL AND status = 'active'`,
+    [userId]
+  );
+  // Sorted so the first renewal seen per asset is the soonest (or most overdue).
+  const renewals = await db.all(
+    "SELECT * FROM asset_renewals WHERE user_id = ? AND due_date IS NOT NULL ORDER BY due_date ASC",
+    [userId]
+  );
+
+  const incomeByAsset = new Map();
+  const expenseByAsset = new Map();
+  for (const row of txAgg) {
+    const bucket = row.type === "income" ? incomeByAsset : expenseByAsset;
+    bucket.set(row.asset_id, (bucket.get(row.asset_id) || 0) + (Number(row.total) || 0));
+  }
+
+  const recurringTotalByAsset = new Map();
+  const weeklyCostByAsset = new Map();
+  for (const row of subAgg) {
+    recurringTotalByAsset.set(row.asset_id, (recurringTotalByAsset.get(row.asset_id) || 0) + (Number(row.amount) || 0));
+    weeklyCostByAsset.set(row.asset_id, (weeklyCostByAsset.get(row.asset_id) || 0) + weeklyEquivalent(row.amount, row.frequency));
+  }
+
+  const nextRenewalByAsset = new Map();
+  for (const row of renewals) {
+    if (!nextRenewalByAsset.has(row.asset_id)) {
+      nextRenewalByAsset.set(row.asset_id, serializeRenewal(row));
+    }
+  }
+
+  return assets.map((asset) => ({
+    ...serializeAsset(asset),
+    nextRenewal: nextRenewalByAsset.get(asset.id) || null,
+    stats: buildAssetStats(asset, {
+      income: incomeByAsset.get(asset.id) || 0,
+      expenseTx: expenseByAsset.get(asset.id) || 0,
+      recurringCostTotal: recurringTotalByAsset.get(asset.id) || 0,
+      weeklyRecurringCost: weeklyCostByAsset.get(asset.id) || 0,
+    }),
+  }));
+}
+
 let quoteRefreshInFlight = false;
 let nextQuoteRefreshAt = 0;
 
@@ -600,6 +719,10 @@ async function start() {
   // Everything under /api requires a valid access token.
   app.use("/api", auth.requireAuth);
 
+  // Accepts either assetId (camelCase, from the client) or asset_id; null when the
+  // row isn't attributed to an asset.
+  const readAssetId = (body) => body.assetId ?? body.asset_id ?? null;
+
   app.get("/api/transactions", async (req, res) => {
     const rows = await db.all("SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC, created_at DESC", [req.user.id]);
     res.json(rows.map((row) => ({ ...row, desc: row.description })));
@@ -609,8 +732,8 @@ async function start() {
     const { id, icon, desc, category, date, amount, type } = req.body;
     const nextId = id || Date.now().toString();
     await db.run(
-      "INSERT INTO transactions (id, user_id, icon, description, category, date, amount, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [nextId, req.user.id, icon, desc, category, date, amount, type]
+      "INSERT INTO transactions (id, user_id, icon, description, category, date, amount, type, asset_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [nextId, req.user.id, icon, desc, category, date, amount, type, readAssetId(req.body)]
     );
     const row = await db.get("SELECT * FROM transactions WHERE id = ? AND user_id = ?", [nextId, req.user.id]);
     res.json({ ...row, desc: row.description });
@@ -619,8 +742,8 @@ async function start() {
   app.put("/api/transactions/:id", async (req, res) => {
     const { icon, desc, category, date, amount, type } = req.body;
     const result = await db.run(
-      "UPDATE transactions SET icon = ?, description = ?, category = ?, date = ?, amount = ?, type = ? WHERE id = ? AND user_id = ?",
-      [icon, desc, category, date, amount, type, req.params.id, req.user.id]
+      "UPDATE transactions SET icon = ?, description = ?, category = ?, date = ?, amount = ?, type = ?, asset_id = ? WHERE id = ? AND user_id = ?",
+      [icon, desc, category, date, amount, type, readAssetId(req.body), req.params.id, req.user.id]
     );
     if (!result.changes) {
       return res.status(404).json({ error: "Transaction not found." });
@@ -766,8 +889,8 @@ async function start() {
     const { id, kind, icon, name, category, amount, frequency, nextBilling, status, note } = req.body;
     const nextId = id || Date.now().toString();
     await db.run(
-      "INSERT INTO subscriptions (id, user_id, kind, icon, name, category, amount, frequency, next_billing, status, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [nextId, req.user.id, kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note]
+      "INSERT INTO subscriptions (id, user_id, kind, icon, name, category, amount, frequency, next_billing, status, note, asset_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [nextId, req.user.id, kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note, readAssetId(req.body)]
     );
     const row = await db.get("SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", [nextId, req.user.id]);
     res.json({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing });
@@ -776,8 +899,8 @@ async function start() {
   app.put("/api/subscriptions/:id", async (req, res) => {
     const { kind, icon, name, category, amount, frequency, nextBilling, status, note } = req.body;
     const result = await db.run(
-      "UPDATE subscriptions SET kind = ?, icon = ?, name = ?, category = ?, amount = ?, frequency = ?, next_billing = ?, status = ?, note = ? WHERE id = ? AND user_id = ?",
-      [kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note, req.params.id, req.user.id]
+      "UPDATE subscriptions SET kind = ?, icon = ?, name = ?, category = ?, amount = ?, frequency = ?, next_billing = ?, status = ?, note = ?, asset_id = ? WHERE id = ? AND user_id = ?",
+      [kind || "subscription", icon, name, category, amount, frequency, nextBilling, status, note, readAssetId(req.body), req.params.id, req.user.id]
     );
     if (!result.changes) {
       return res.status(404).json({ error: "Subscription not found." });
@@ -792,6 +915,175 @@ async function start() {
       return res.status(404).json({ error: "Subscription not found." });
     }
     res.json({ ok: true, id: req.params.id });
+  });
+
+  // ---- Assets --------------------------------------------------------
+  // Operational tracking for any income-generating asset (a rental car, a rented
+  // property, leased equipment). Income received lands as a linked income
+  // transaction, one-off costs as a linked expense transaction, and recurring
+  // costs as linked active subscriptions — it reuses the subscriptions table
+  // rather than duplicating recurrence logic. Expiry/renewal reminders that vary
+  // by asset type live in the generic asset_renewals table, not typed columns.
+
+  async function loadAssetDetail(assetId, userId) {
+    const asset = await db.get("SELECT * FROM assets WHERE id = ? AND user_id = ?", [assetId, userId]);
+    if (!asset) return null;
+
+    const renewals = await db.all(
+      "SELECT * FROM asset_renewals WHERE asset_id = ? AND user_id = ? ORDER BY due_date IS NULL, due_date ASC, created_at ASC",
+      [assetId, userId]
+    );
+    const transactions = await db.all(
+      "SELECT * FROM transactions WHERE asset_id = ? AND user_id = ? ORDER BY date DESC, created_at DESC",
+      [assetId, userId]
+    );
+    const subscriptions = await db.all(
+      "SELECT * FROM subscriptions WHERE asset_id = ? AND user_id = ? ORDER BY status, created_at DESC",
+      [assetId, userId]
+    );
+
+    const income = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const expenseTx = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const activeSubs = subscriptions.filter((sub) => sub.status === "active");
+    const recurringCostTotal = activeSubs.reduce((sum, sub) => sum + (Number(sub.amount) || 0), 0);
+    const weeklyRecurringCost = activeSubs.reduce((sum, sub) => sum + weeklyEquivalent(sub.amount, sub.frequency), 0);
+    const serializedRenewals = renewals.map(serializeRenewal);
+
+    return {
+      ...serializeAsset(asset),
+      renewals: serializedRenewals,
+      nextRenewal: serializedRenewals.find((renewal) => renewal.dueDate) || null,
+      stats: buildAssetStats(asset, { income, expenseTx, recurringCostTotal, weeklyRecurringCost }),
+      transactions: transactions.map((row) => ({ ...row, desc: row.description })),
+      subscriptions: subscriptions.map((row) => ({ ...row, kind: row.kind || "subscription", nextBilling: row.next_billing })),
+    };
+  }
+
+  const assetFields = (body) => ({
+    name: String(body.name || "").trim(),
+    category: body.category ? String(body.category).trim() : null,
+    status: body.status || "active",
+    incomeAmount: Number(body.incomeAmount ?? body.income_amount) || 0,
+    incomeFrequency: body.incomeFrequency || body.income_frequency || "weekly",
+    purchasePrice: body.purchasePrice != null && body.purchasePrice !== "" ? Number(body.purchasePrice) : null,
+    purchaseDate: body.purchaseDate || body.purchase_date || null,
+    note: body.note || null,
+  });
+
+  app.get("/api/assets", async (req, res) => {
+    res.json(await getAssetsPayload(req.user.id));
+  });
+
+  app.get("/api/assets/:id", async (req, res) => {
+    const detail = await loadAssetDetail(req.params.id, req.user.id);
+    if (!detail) {
+      return res.status(404).json({ error: "Asset not found." });
+    }
+    res.json(detail);
+  });
+
+  app.post("/api/assets", async (req, res) => {
+    const fields = assetFields(req.body);
+    if (!fields.name) {
+      return res.status(400).json({ error: "Asset name is required." });
+    }
+    const nextId = req.body.id || Date.now().toString();
+    await db.run(
+      `INSERT INTO assets (id, user_id, name, category, status, income_amount, income_frequency, purchase_price, purchase_date, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nextId, req.user.id, fields.name, fields.category, fields.status, fields.incomeAmount, fields.incomeFrequency, fields.purchasePrice, fields.purchaseDate, fields.note]
+    );
+    const assets = await getAssetsPayload(req.user.id);
+    res.json(assets.find((asset) => asset.id === nextId));
+  });
+
+  app.put("/api/assets/:id", async (req, res) => {
+    const fields = assetFields(req.body);
+    const result = await db.run(
+      `UPDATE assets SET name = ?, category = ?, status = ?, income_amount = ?, income_frequency = ?, purchase_price = ?, purchase_date = ?, note = ?
+        WHERE id = ? AND user_id = ?`,
+      [fields.name, fields.category, fields.status, fields.incomeAmount, fields.incomeFrequency, fields.purchasePrice, fields.purchaseDate, fields.note, req.params.id, req.user.id]
+    );
+    if (!result.changes) {
+      return res.status(404).json({ error: "Asset not found." });
+    }
+    const assets = await getAssetsPayload(req.user.id);
+    res.json(assets.find((asset) => asset.id === req.params.id));
+  });
+
+  app.delete("/api/assets/:id", async (req, res) => {
+    // Unlink the financial history rather than deleting it — the money still moved.
+    // Same rule as deleting a debt. Renewal reminders are asset-scoped noise, so
+    // those go (the schema cascade covers a fresh DB; this covers the rest).
+    await db.run("UPDATE transactions SET asset_id = NULL WHERE asset_id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    await db.run("UPDATE subscriptions SET asset_id = NULL WHERE asset_id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    await db.run("DELETE FROM asset_renewals WHERE asset_id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    const result = await db.run("DELETE FROM assets WHERE id = ? AND user_id = ?", [req.params.id, req.user.id]);
+    if (!result.changes) {
+      return res.status(404).json({ error: "Asset not found." });
+    }
+    res.json({ ok: true, id: req.params.id });
+  });
+
+  // ---- Asset renewals (generic expiry reminders) -----------------------
+
+  const findAsset = (assetId, userId) => db.get("SELECT id FROM assets WHERE id = ? AND user_id = ?", [assetId, userId]);
+
+  app.get("/api/assets/:id/renewals", async (req, res) => {
+    if (!(await findAsset(req.params.id, req.user.id))) {
+      return res.status(404).json({ error: "Asset not found." });
+    }
+    const rows = await db.all(
+      "SELECT * FROM asset_renewals WHERE asset_id = ? AND user_id = ? ORDER BY due_date IS NULL, due_date ASC, created_at ASC",
+      [req.params.id, req.user.id]
+    );
+    res.json(rows.map(serializeRenewal));
+  });
+
+  app.post("/api/assets/:id/renewals", async (req, res) => {
+    if (!(await findAsset(req.params.id, req.user.id))) {
+      return res.status(404).json({ error: "Asset not found." });
+    }
+    const label = String(req.body.label || "").trim();
+    if (!label) {
+      return res.status(400).json({ error: "Renewal label is required." });
+    }
+    const nextId = req.body.id || Date.now().toString();
+    const dueDate = req.body.dueDate || req.body.due_date || null;
+    await db.run(
+      "INSERT INTO asset_renewals (id, user_id, asset_id, label, due_date, note) VALUES (?, ?, ?, ?, ?, ?)",
+      [nextId, req.user.id, req.params.id, label, dueDate, req.body.note || null]
+    );
+    const row = await db.get("SELECT * FROM asset_renewals WHERE id = ? AND user_id = ?", [nextId, req.user.id]);
+    res.json(serializeRenewal(row));
+  });
+
+  app.put("/api/assets/:id/renewals/:renewalId", async (req, res) => {
+    const label = String(req.body.label || "").trim();
+    if (!label) {
+      return res.status(400).json({ error: "Renewal label is required." });
+    }
+    const dueDate = req.body.dueDate || req.body.due_date || null;
+    const result = await db.run(
+      "UPDATE asset_renewals SET label = ?, due_date = ?, note = ? WHERE id = ? AND asset_id = ? AND user_id = ?",
+      [label, dueDate, req.body.note || null, req.params.renewalId, req.params.id, req.user.id]
+    );
+    if (!result.changes) {
+      return res.status(404).json({ error: "Renewal not found." });
+    }
+    const row = await db.get("SELECT * FROM asset_renewals WHERE id = ? AND user_id = ?", [req.params.renewalId, req.user.id]);
+    res.json(serializeRenewal(row));
+  });
+
+  app.delete("/api/assets/:id/renewals/:renewalId", async (req, res) => {
+    const result = await db.run(
+      "DELETE FROM asset_renewals WHERE id = ? AND asset_id = ? AND user_id = ?",
+      [req.params.renewalId, req.params.id, req.user.id]
+    );
+    if (!result.changes) {
+      return res.status(404).json({ error: "Renewal not found." });
+    }
+    res.json({ ok: true, id: req.params.renewalId });
   });
 
   app.get("/api/investments/catalog", async (_req, res) => {

@@ -5,18 +5,22 @@ import s from "./Modal.module.css";
 
 const ICON_OPTIONS = [...new Set(Object.values(SUB_CAT_ICONS))];
 
-export default function SubModal({ initial, onSave, onClose }) {
+export default function SubModal({ initial, prefill, onSave, onClose }) {
   const today = new Date().toISOString().slice(0, 10);
+  // `prefill` seeds a new recurring cost pre-linked to an asset without putting
+  // the modal into edit mode.
+  const seed = initial || prefill || {};
   const [f, setF] = useState({
-    kind: initial?.kind || "subscription",
-    name: initial?.name || "",
-    icon: initial?.icon || "tv",
-    category: initial?.category || "Streaming",
-    amount: initial?.amount?.toString() || "",
-    frequency: initial?.frequency || "monthly",
-    nextBilling: initial?.nextBilling || initial?.next_billing || today,
-    status: initial?.status || "active",
-    note: initial?.note || "",
+    kind: seed.kind || "subscription",
+    name: seed.name || "",
+    icon: seed.icon || "tv",
+    category: seed.category || "Streaming",
+    amount: seed.amount?.toString() || "",
+    frequency: seed.frequency || "monthly",
+    nextBilling: seed.nextBilling || seed.next_billing || today,
+    status: seed.status || "active",
+    note: seed.note || "",
+    assetId: seed.assetId || seed.asset_id || null,
     id: initial?.id,
   });
 
@@ -29,6 +33,11 @@ export default function SubModal({ initial, onSave, onClose }) {
           <h3 className={s.title}>{initial ? "Edit Fixed Cost" : "New Fixed Cost"}</h3>
           <button onClick={onClose} className={s.close}><Icon name="close" size={13} /></button>
         </div>
+        {(prefill?.assetName || f.assetId) && (
+          <div className={s.field} style={{ marginBottom: 12, color: "var(--text-muted)", fontSize: 12 }}>
+            Linked to {prefill?.assetName || "asset"}
+          </div>
+        )}
 
         <div className={s.field}>
           <label className={s.label}>Type</label>

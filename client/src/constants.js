@@ -1,6 +1,7 @@
 export const CAT_ICONS = {
   Food: "food",
   Transport: "car",
+  Vehicle: "car",
   Housing: "home",
   Health: "health",
   Entertainment: "game",
@@ -9,6 +10,7 @@ export const CAT_ICONS = {
   Utilities: "power",
   Salary: "salary",
   Freelance: "work",
+  "Asset Income": "salary",
   Investment: "chart",
   Subscriptions: "tv",
   Debt: "exchange",
@@ -26,16 +28,22 @@ export const CAT_COLORS = {
   Utilities: "#9b8fd4",
   Entertainment: "#e0709e",
   Transport: "#4fc4c9",
+  Vehicle: "#4fc4c9",
   Health: "#5bc9e0",
   Subscriptions: "#c9a24c",
   Debt: "#3fb37f",
   Salary: "#3fb37f",
   Freelance: "#6a8dff",
+  "Asset Income": "#3fb37f",
   Investment: "#e0709e",
   Other: "#7d8290",
 };
 
 export const TX_CATS = Object.keys(CAT_ICONS);
+
+// Suggested asset categories. These are hints only — the asset form keeps
+// `category` as a free-editable text field, so anything can be typed.
+export const ASSET_CATEGORIES = ["Vehicle", "Property", "Equipment", "Other"];
 
 // Crypto tickers stay as text badges, not icons — a monospace symbol in a
 // bordered box reads as a real exchange ticker and needs no glyph.
@@ -67,6 +75,8 @@ export const SUB_CATS = [
   "Housing",
   "Gym",
   "Insurance",
+  "Vehicle",
+  "Asset Cost",
   "Education",
   "Council",
   "Taxes",
@@ -84,6 +94,8 @@ export const SUB_CAT_ICONS = {
   Housing: "home",
   Gym: "fitness",
   Insurance: "shield",
+  Vehicle: "car",
+  "Asset Cost": "package",
   Education: "book",
   Council: "building",
   Taxes: "receipt",

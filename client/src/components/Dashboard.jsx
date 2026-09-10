@@ -27,8 +27,8 @@ function buildTrendPath(values, { width = 400, height = 120, pad = 10 } = {}) {
   return { points, line, area, last: points[points.length - 1], width, height, pad };
 }
 
-export default function Dashboard({ data, onGoToBills, onGoToInvestments, onGoToDebts, onGoToTransactions, investmentRange, onRangeChange }) {
-  const { transactions, debts, subscriptions, investments, investmentTrend } = data;
+export default function Dashboard({ data, onGoToBills, onGoToInvestments, onGoToDebts, onGoToTransactions, onGoToAssets, investmentRange, onRangeChange }) {
+  const { transactions, debts, subscriptions, investments, investmentTrend, assets = [] } = data;
   const now = new Date();
   const monthName = now.toLocaleDateString("en-US", { month: "long" });
 
@@ -53,6 +53,11 @@ export default function Dashboard({ data, onGoToBills, onGoToInvestments, onGoTo
     }, 0);
 
   const investmentSummary = investments?.summary || {};
+
+  const assetsNet = assets.reduce((sum, asset) => sum + (asset.stats?.netProfit || 0), 0);
+  const assetsWeeklyIncome = assets
+    .filter((asset) => asset.status === "active")
+    .reduce((sum, asset) => sum + (asset.stats?.weeklyEquivalentIncome || 0), 0);
 
   const spendingSeries = useMemo(() => {
     const key = monthKey(now);
@@ -249,6 +254,39 @@ export default function Dashboard({ data, onGoToBills, onGoToInvestments, onGoTo
           )}
         </section>
       </div>
+
+      {assets.length > 0 && (
+        <section className={`${styles.card} ${styles.wide}`}>
+          <div className={styles.cardHead}>
+            <div>
+              <div className={styles.cardTitle}>Assets</div>
+              <div className={`${styles.cardFigure} ledgerTotal`}>{fmt(assetsWeeklyIncome)} / wk</div>
+              <div className={assetsNet >= 0 ? styles.deltaPositive : styles.deltaNegative}>
+                {fmt(assetsNet)} net profit &middot; {assets.length} asset{assets.length === 1 ? "" : "s"}
+              </div>
+            </div>
+            <button type="button" className={styles.linkBtn} onClick={onGoToAssets}>View all</button>
+          </div>
+          <div className={styles.txList}>
+            {assets.slice(0, 5).map((asset) => {
+              const net = asset.stats?.netProfit || 0;
+              return (
+                <div key={asset.id} className={styles.txRow}>
+                  <div className={styles.txIconWrap}><Icon name="package" size={16} /></div>
+                  <div className={styles.txInfo}>
+                    <div className={styles.txName}>{asset.name}</div>
+                    <div className={styles.txMeta}>{asset.category || "Uncategorised"} &middot; {fmt(asset.stats?.weeklyEquivalentIncome || 0)}/wk</div>
+                  </div>
+                  <span className={styles.txTag} style={{ background: "var(--surface-3)", color: "var(--text-secondary)" }}>
+                    {asset.status}
+                  </span>
+                  <div className={net >= 0 ? styles.txAmtPositive : styles.txAmtNegative}>{fmt(net)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className={`${styles.card} ${styles.wide}`}>
         <div className={styles.cardHead}>

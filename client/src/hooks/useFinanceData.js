@@ -8,6 +8,7 @@ const DEFAULT_INVESTMENT_RANGE = "1M";
 export function useFinanceData() {
   const [transactions, setTransactions] = useState([]);
   const [debts, setDebts] = useState([]);
+  const [assets, setAssets] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [investments, setInvestments] = useState({ items: [], summary: null });
   const [investmentTrend, setInvestmentTrend] = useState([]);
@@ -40,9 +41,10 @@ export function useFinanceData() {
   const loadAll = useCallback(async () => {
     try {
       setLoading(true);
-      const [txs, dbs, subs, portfolio, trend, catalog, health] = await Promise.all([
+      const [txs, dbs, as, subs, portfolio, trend, catalog, health] = await Promise.all([
         api.getTx(),
         api.getDebts(),
+        api.getAssets(),
         api.getSubs(),
         api.getInvestments(),
         api.getInvestmentsTrend(DEFAULT_INVESTMENT_RANGE),
@@ -51,6 +53,7 @@ export function useFinanceData() {
       ]);
       setTransactions(txs);
       setDebts(dbs.map(normalizeDebt));
+      setAssets(as);
       setSubscriptions(subs.map(normalizeSubscription));
       setInvestments(portfolio);
       setInvestmentTrend(trend);
@@ -133,6 +136,36 @@ export function useFinanceData() {
     await loadAll();
   };
 
+  const addAsset = async (asset) => {
+    await api.addAsset(asset);
+    await loadAll();
+  };
+
+  const updateAsset = async (asset) => {
+    await api.updateAsset(asset.id, asset);
+    await loadAll();
+  };
+
+  const deleteAsset = async (id) => {
+    await api.deleteAsset(id);
+    await loadAll();
+  };
+
+  const addAssetRenewal = async (assetId, data) => {
+    await api.addAssetRenewal(assetId, data);
+    await loadAll();
+  };
+
+  const updateAssetRenewal = async (assetId, renewalId, data) => {
+    await api.updateAssetRenewal(assetId, renewalId, data);
+    await loadAll();
+  };
+
+  const deleteAssetRenewal = async (assetId, renewalId) => {
+    await api.deleteAssetRenewal(assetId, renewalId);
+    await loadAll();
+  };
+
   const addSubscription = async (item) => {
     await api.addSub(item);
     await loadAll();
@@ -170,6 +203,7 @@ export function useFinanceData() {
     data: {
       transactions,
       debts,
+      assets,
       subscriptions,
       investments,
       investmentTrend,
@@ -188,6 +222,12 @@ export function useFinanceData() {
     deleteDebt,
     settleDebt,
     unsettleDebt,
+    addAsset,
+    updateAsset,
+    deleteAsset,
+    addAssetRenewal,
+    updateAssetRenewal,
+    deleteAssetRenewal,
     addSubscription,
     updateSubscription,
     deleteSubscription,

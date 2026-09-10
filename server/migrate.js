@@ -13,6 +13,7 @@ const SCHEMA = `
     amount      REAL NOT NULL,
     type        TEXT CHECK(type IN ('income','expense')) NOT NULL,
     debt_id     TEXT,
+    asset_id    TEXT,
     created_at  TEXT DEFAULT (datetime('now'))
   );
 
@@ -40,7 +41,32 @@ const SCHEMA = `
     next_billing TEXT,
     status       TEXT CHECK(status IN ('active','paused','cancelled')) DEFAULT 'active',
     note         TEXT,
+    asset_id     TEXT,
     created_at   TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS assets (
+    id               TEXT PRIMARY KEY,
+    user_id          INTEGER NOT NULL REFERENCES users(id),
+    name             TEXT NOT NULL,
+    category         TEXT,
+    status           TEXT CHECK(status IN ('active','maintenance','inactive','sold')) NOT NULL DEFAULT 'active',
+    income_amount    REAL NOT NULL DEFAULT 0,
+    income_frequency TEXT CHECK(income_frequency IN ('daily','weekly','monthly','yearly')) NOT NULL DEFAULT 'weekly',
+    purchase_price   REAL,
+    purchase_date    TEXT,
+    note             TEXT,
+    created_at       TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS asset_renewals (
+    id         TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    asset_id   TEXT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    label      TEXT NOT NULL,
+    due_date   TEXT,
+    note       TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS investments_assets (
@@ -138,6 +164,19 @@ async function ensureTransactionDebtColumn() {
   );
 }
 
+// Links transactions and subscriptions back to an income-generating asset, so the
+// income it earns, its one-off costs, and its recurring costs can all be attributed
+// to it. Nullable and unconstrained, exactly like debt_id above — existing rows stay
+// valid untouched.
+async function ensureAssetLinkColumns() {
+  for (const table of ["transactions", "subscriptions"]) {
+    const columns = await db.all(`PRAGMA table_info(${table})`);
+    if (!columns.some((column) => column.name === "asset_id")) {
+      await db.exec(`ALTER TABLE ${table} ADD COLUMN asset_id TEXT`);
+    }
+  }
+}
+
 async function ensureUserIdColumn(table) {
   const columns = await db.all(`PRAGMA table_info(${table})`);
   if (!columns.some((column) => column.name === "user_id")) {
@@ -151,6 +190,7 @@ async function migrate() {
   await ensureInvestmentLotColumns();
   await ensureDebtDirectionColumn();
   await ensureTransactionDebtColumn();
+  await ensureAssetLinkColumns();
   await ensureUserIdColumn("transactions");
   await ensureUserIdColumn("debts");
   await ensureUserIdColumn("subscriptions");

@@ -8,9 +8,11 @@ import Transactions from "./components/Transactions.jsx";
 import Investments from "./components/Investments.jsx";
 import Subscriptions from "./components/Subscriptions.jsx";
 import Debts from "./components/Debts.jsx";
+import Assets from "./components/Assets.jsx";
 import TxModal from "./components/modals/TxModal.jsx";
 import DebtModal from "./components/modals/DebtModal.jsx";
 import SubModal from "./components/modals/SubModal.jsx";
+import AssetModal from "./components/modals/AssetModal.jsx";
 import InvestmentModal from "./components/modals/InvestmentModal.jsx";
 
 export default function App() {
@@ -30,6 +32,12 @@ export default function App() {
     deleteDebt,
     settleDebt,
     unsettleDebt,
+    addAsset,
+    updateAsset,
+    deleteAsset,
+    addAssetRenewal,
+    updateAssetRenewal,
+    deleteAssetRenewal,
     addSubscription,
     updateSubscription,
     deleteSubscription,
@@ -42,6 +50,9 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
+  // Seeds a fresh Tx/Sub modal (e.g. logging an asset's income) without the
+  // modal treating it as an edit.
+  const [prefill, setPrefill] = useState(null);
   const [saveNotice, setSaveNotice] = useState(null);
   const [displayCurrency, setDisplayCurrency] = useState(getDisplayCurrency());
 
@@ -88,6 +99,67 @@ export default function App() {
 
   const handleDeleteSubscription = async (id) => {
     await runSavedAction(() => deleteSubscription(id), "Fixed cost removed from database");
+  };
+
+  const handleDeleteAsset = async (id) => {
+    await runSavedAction(() => deleteAsset(id), "Asset removed from database");
+  };
+
+  const openEditAsset = (asset) => {
+    setEditing(asset);
+    setModal("edit-asset");
+  };
+
+  const closeEntryModal = () => {
+    setModal(null);
+    setEditing(null);
+    setPrefill(null);
+  };
+
+  const logAssetIncome = (asset) => {
+    setEditing(null);
+    setPrefill({
+      type: "income",
+      category: "Asset Income",
+      desc: `${asset.name} — income`,
+      amount: asset.incomeAmount || asset.income_amount || "",
+      icon: "salary",
+      assetId: asset.id,
+      assetName: asset.name,
+    });
+    setModal("add-tx");
+  };
+
+  const logAssetExpense = (asset) => {
+    setEditing(null);
+    setPrefill({ type: "expense", category: "Vehicle", icon: "receipt", assetId: asset.id, assetName: asset.name });
+    setModal("add-tx");
+  };
+
+  const addAssetRecurring = (asset) => {
+    setEditing(null);
+    setPrefill({
+      kind: "bill",
+      category: "Asset Cost",
+      icon: "package",
+      frequency: "yearly",
+      name: `${asset.name} — `,
+      assetId: asset.id,
+      assetName: asset.name,
+    });
+    setModal("add-sub");
+  };
+
+  const handleAddAssetRenewal = async (assetId, data) => {
+    await runSavedAction(() => addAssetRenewal(assetId, data), "Renewal added to database");
+  };
+
+  const handleUpdateAssetRenewal = async (assetId, renewalId, data) => {
+    await runSavedAction(() => updateAssetRenewal(assetId, renewalId, data), "Renewal saved to database");
+  };
+
+  const handleDeleteAssetRenewal = async (assetId, renewalId) => {
+    await runSavedAction(() => deleteAssetRenewal(assetId, renewalId), "Renewal removed from database");
   };
 
   const handleDeleteInvestmentPurchase = async (id) => {
@@ -219,6 +291,7 @@ export default function App() {
               onGoToInvestments={() => setPage("investments")}
               onGoToDebts={() => setPage("debts")}
               onGoToTransactions={() => setPage("transactions")}
+              onGoToAssets={() => setPage("assets")}
             />
           )}
           {page === "transactions" && (
@@ -268,6 +341,23 @@ export default function App() {
               onUnsettle={handleUnsettleDebt}
             />
           )}
+          {page === "assets" && (
+            <Assets
+              assets={data.assets}
+              onAdd={() => {
+                setEditing(null);
+                setModal("add-asset");
+              }}
+              onEdit={openEditAsset}
+              onDelete={handleDeleteAsset}
+              onLogIncome={logAssetIncome}
+              onLogExpense={logAssetExpense}
+              onAddRecurring={addAssetRecurring}
+              onAddRenewal={handleAddAssetRenewal}
+              onUpdateRenewal={handleUpdateAssetRenewal}
+              onDeleteRenewal={handleDeleteAssetRenewal}
+            />
+          )}
         </main>
       </div>
 
@@ -300,14 +390,15 @@ export default function App() {
       {(modal === "add-tx" || modal === "edit-tx") && (
         <TxModal
           initial={modal === "edit-tx" ? editing : null}
+          prefill={modal === "add-tx" ? prefill : null}
           onSave={async (tx) => {
             const ok = await runSavedAction(
               () => (modal === "edit-tx" ? updateTransaction(tx) : addTransaction(tx)),
               modal === "edit-tx" ? "Transaction saved to database" : "Transaction added to database"
             );
-            if (ok) setModal(null);
+            if (ok) closeEntryModal();
           }}
-          onClose={() => setModal(null)}
+          onClose={closeEntryModal}
         />
       )}
       {(modal === "add-debt" || modal === "edit-debt") && (
@@ -326,14 +417,28 @@ export default function App() {
       {(modal === "add-sub" || modal === "edit-sub") && (
         <SubModal
           initial={modal === "edit-sub" ? editing : null}
+          prefill={modal === "add-sub" ? prefill : null}
           onSave={async (item) => {
             const ok = await runSavedAction(
               () => (modal === "edit-sub" ? updateSubscription(item) : addSubscription(item)),
               modal === "edit-sub" ? "Fixed cost saved to database" : "Fixed cost added to database"
             );
-            if (ok) setModal(null);
+            if (ok) closeEntryModal();
           }}
-          onClose={() => setModal(null)}
+          onClose={closeEntryModal}
+        />
+      )}
+      {(modal === "add-asset" || modal === "edit-asset") && (
+        <AssetModal
+          initial={modal === "edit-asset" ? editing : null}
+          onSave={async (asset) => {
+            const ok = await runSavedAction(
+              () => (modal === "edit-asset" ? updateAsset(asset) : addAsset(asset)),
+              modal === "edit-asset" ? "Asset saved to database" : "Asset added to database"
+            );
+            if (ok) closeEntryModal();
+          }}
+          onClose={closeEntryModal}
         />
       )}
       {modal === "add-investment" && (

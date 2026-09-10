@@ -52,6 +52,17 @@ export const deleteDebt  = (id)    => req("DELETE", `/debts/${id}`);
 export const settleDebt   = (id)   => req("POST",   `/debts/${id}/settle`);
 export const unsettleDebt = (id)   => req("POST",   `/debts/${id}/unsettle`);
 
+// Assets (income-generating: vehicles, property, equipment, ...)
+export const getAssets   = ()      => req("GET",    "/assets");
+export const getAsset     = (id)   => req("GET",    `/assets/${id}`);
+export const addAsset     = (data) => req("POST",   "/assets", data);
+export const updateAsset  = (id, d) => req("PUT",   `/assets/${id}`, d);
+export const deleteAsset  = (id)   => req("DELETE", `/assets/${id}`);
+export const getAssetRenewals   = (assetId)         => req("GET",    `/assets/${assetId}/renewals`);
+export const addAssetRenewal    = (assetId, data)   => req("POST",   `/assets/${assetId}/renewals`, data);
+export const updateAssetRenewal = (assetId, id, d)  => req("PUT",    `/assets/${assetId}/renewals/${id}`, d);
+export const deleteAssetRenewal = (assetId, id)     => req("DELETE", `/assets/${assetId}/renewals/${id}`);
+
 // Subscriptions
 export const getSubs    = ()      => req("GET",    "/subscriptions");
 export const addSub     = (data)  => req("POST",   "/subscriptions", data);
